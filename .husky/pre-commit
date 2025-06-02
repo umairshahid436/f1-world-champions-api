@@ -1,2 +1,4 @@
+echo "pre-commit hook"
+
 npm run lint
 npm run format
