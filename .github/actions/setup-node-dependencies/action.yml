@@ -10,7 +10,7 @@ runs:
         node-version: '20.x'
         cache: 'npm'
 
-    - name: 📂 Restore node_modules cache
+    - name: Restore node_modules cache
       id: cache-nodemodules
       uses: actions/cache@v4
       with:
@@ -19,18 +19,18 @@ runs:
         restore-keys: |
           ${{ runner.os }}-node-modules-
 
-    - name: 📦 Install dependencies (if cache miss)
+    - name: Install dependencies (if cache miss)
       if: steps.cache-nodemodules.outputs.cache-hit != 'true'
       run: npm ci
       shell: bash
 
-    - name: ✅ Dependencies ready
+    - name: Dependencies ready
       run: |
         if [[ "${{ steps.cache-nodemodules.outputs.cache-hit }}" == "true" ]]; then
-          echo "✅ Dependencies restored from cache"
+          echo "Dependencies restored from cache"
         else
-          echo "✅ Dependencies installed and cached"
+          echo "Dependencies installed and cached"
         fi
-        echo "📊 Node.js version: $(node --version)"
-        echo "📊 npm version: $(npm --version)"
+        echo "Node.js version: $(node --version)"
+        echo "npm version: $(npm --version)"
       shell: bash
