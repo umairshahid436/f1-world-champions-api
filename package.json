@@ -66,7 +66,7 @@
     ],
     "coverageThreshold": {
       "global": {
-        "lines": 50
+        "lines": 70
       }
     },
     "rootDir": "src",
@@ -82,8 +82,7 @@
       "\\.d\\.ts$",
       "\\.config\\.",
       "/dist/",
-      "main\\.ts$",
-      "app\\.module\\.ts$"
+      "main\\.ts$"
     ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
