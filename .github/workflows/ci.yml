@@ -45,6 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+      checks: write
 
     needs: install-dependencies
 
@@ -55,8 +56,15 @@ jobs:
       - name: setup-node-dependencies
         uses: ./.github/actions/setup-node-dependencies
 
-      - name: Run tests
-        run: npm run test
+      - name: Coverage report action
+        uses: ArtiomTr/jest-coverage-report-action@v2
+        with:
+          coverage-file: ./coverage/lcov.info
+          base-coverage-file: ./coverage/lcov.info
+          threshold: 70
+          working-directory: ./
+          test-script: npm run test -- --coverage --watchAll=false
+          annotations: all
 
   # Stage 4: Security
   security:
