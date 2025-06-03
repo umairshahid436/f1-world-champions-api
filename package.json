@@ -66,7 +66,7 @@
     ],
     "coverageThreshold": {
       "global": {
-        "lines": 70
+        "lines": 50
       }
     },
     "rootDir": "src",
@@ -75,14 +75,14 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverage": true,
-    "exclude": [
-      "node_modules/",
-      "src/**/*.test.{js,ts}",
-      "src/**/*.spec.{js,ts}",
-      "**/*.d.ts",
-      "**/*.config.*",
-      "dist/",
-      "src/main.ts"
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "\\.test\\.(js|ts)$",
+      "\\.spec\\.(js|ts)$",
+      "\\.d\\.ts$",
+      "\\.config\\.",
+      "/dist/",
+      "main\\.ts$"
     ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"

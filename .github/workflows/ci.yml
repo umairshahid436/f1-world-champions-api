@@ -56,11 +56,8 @@ jobs:
       - name: setup-node-dependencies
         uses: ./.github/actions/setup-node-dependencies
 
-      - name: Coverage report action
-        uses: ArtiomTr/jest-coverage-report-action@v2
-        with:
-          test-script: npx jest
-          annotations: all
+      - name: Run tests
+        run: npm run test:cov
 
   # Stage 4: Security
   security:
