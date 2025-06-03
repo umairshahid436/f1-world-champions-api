@@ -59,7 +59,8 @@ jobs:
       - name: Coverage report action
         uses: ArtiomTr/jest-coverage-report-action@v2
         with:
-          test-script: npx jest
+          working-directory: ./
+          test-script: npm run test:cov
           annotations: all
 
   # Stage 4: Security
