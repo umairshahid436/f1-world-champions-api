@@ -59,11 +59,7 @@ jobs:
       - name: Coverage report action
         uses: ArtiomTr/jest-coverage-report-action@v2
         with:
-          coverage-file: ./coverage/lcov.info
-          base-coverage-file: ./coverage/lcov.info
-          threshold: 70
-          working-directory: ./
-          test-script: npm run test -- --coverage --watchAll=false
+          test-script: npx jest
           annotations: all
 
   # Stage 4: Security

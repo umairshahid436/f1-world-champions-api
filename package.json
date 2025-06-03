@@ -64,12 +64,26 @@
       "json",
       "ts"
     ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 70
+      }
+    },
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverage": true,
+    "exclude": [
+      "node_modules/",
+      "src/**/*.test.{js,ts}",
+      "src/**/*.spec.{js,ts}",
+      "**/*.d.ts",
+      "**/*.config.*",
+      "dist/",
+      "src/main.ts"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
