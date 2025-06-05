@@ -1,0 +1,6 @@
+### Get all seasons
+
+GET http://localhost:3000/api/races/
+Content-Type: application/json
+
+
