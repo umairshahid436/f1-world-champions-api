@@ -3,38 +3,41 @@ import {
   PrimaryColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
+  // UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { Season } from '../modules/seasons/season.entity';
-import { Race } from '../modules/races/race.entity';
+import { Season } from './season.entity';
+// import { Race } from './race.entity';
 
 @Entity('drivers')
 export class Driver {
   @PrimaryColumn({ type: 'varchar', length: 50 })
-  id!: string;
+  id!: string; // This will be driverId from Ergast API
 
   @Column({ type: 'varchar', length: 100 })
-  name!: string;
+  given_name!: string;
+
+  @Column({ type: 'varchar', length: 100 })
+  family_name!: string;
 
   @Column({ type: 'varchar', length: 50 })
   nationality!: string;
 
-  @Column({ type: 'integer', nullable: true })
-  permanent_number!: number;
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  permanent_number!: string;
 
-  @Column({ type: 'date', nullable: true })
-  date_of_birth!: Date;
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  code!: string;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  url!: string;
 
   @CreateDateColumn()
   created_at!: Date;
 
-  @UpdateDateColumn()
-  updated_at!: Date;
-
   @OneToMany(() => Season, (season) => season.champion_driver)
-  championships!: Season[];
+  seasons!: Season[];
 
-  @OneToMany(() => Race, (race) => race.winner_driver)
-  race_wins!: Race[];
+  // @OneToMany(() => Race, (race) => race.winner_driver)
+  // race_wins!: Race[];
 }

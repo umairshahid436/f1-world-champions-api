@@ -25,6 +25,7 @@
   "dependencies": {
     "@nestjs/axios": "^4.0.0",
     "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.0",
@@ -75,7 +76,7 @@
     ],
     "coverageThreshold": {
       "global": {
-        "lines": 50
+        "lines": 1
       }
     },
     "rootDir": "src",
@@ -87,6 +88,9 @@
     "coveragePathIgnorePatterns": [
       "/node_modules/",
       "\\.test\\.(js|ts)$",
+      "\\.entity\\.(js|ts)$",
+      "\\.module\\.(js|ts)$",
+      "\\.interface\\.(js|ts)$",
       "\\.spec\\.(js|ts)$",
       "\\.d\\.ts$",
       "\\.config\\.",

@@ -8,8 +8,8 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Driver } from '../../entities/driver.entity';
-import { Season } from '../seasons/season.entity';
+import { Driver } from './driver.entity';
+import { Season } from './season.entity';
 
 @Entity('races')
 @Index(['season_year', 'round'])

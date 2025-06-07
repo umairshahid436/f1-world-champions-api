@@ -1,11 +1,12 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
 import {
   ErgastDriverStanding,
   ErgastDriverStandingsResponse,
-} from './ergast.types';
+} from './ergast.interface';
+import { retryWithBackoff } from '@utils/retry.util';
 
 @Injectable()
 export class ErgastService {
@@ -24,48 +25,47 @@ export class ErgastService {
     year: number,
     position: string,
   ): Promise<ErgastDriverStanding[]> {
-    try {
-      const url = `${this.baseUrl}/${year}/driverStandings.json`;
+    return retryWithBackoff(
+      async () => {
+        const url = `${this.baseUrl}/${year}/driverStandings.json`;
 
-      this.logger.log(`Fetching driver standings for ${year}`);
+        this.logger.log(`Fetching driver standings for ${year}`);
 
-      const response: AxiosResponse<ErgastDriverStandingsResponse> =
-        await firstValueFrom(this.httpService.get(url));
+        const response: AxiosResponse<ErgastDriverStandingsResponse> =
+          await firstValueFrom(this.httpService.get(url));
 
-      const data = response.data?.MRData?.StandingsTable?.StandingsLists;
-      if (!data.length) {
-        this.logger.warn(`No seasons found for year ${year}`);
-        return [];
-      }
-
-      const champions = data
-        .map((x) => x.DriverStandings.filter((y) => y.position === position))
-        .flat();
-
-      this.logger.log(
-        `Successfully fetched ${champions.length} driver standings for ${year}`,
-      );
-
-      return champions;
-    } catch (err) {
-      this.logger.error(`Failed to fetch driver standings for ${year}`);
-
-      // Check for 404 specifically for better error messaging
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as { response: { status: number } };
-        if (axiosError.response.status === 404) {
-          throw new HttpException(
-            `No data found for season ${year}`,
-            HttpStatus.NOT_FOUND,
-          );
+        const data = response.data?.MRData?.StandingsTable?.StandingsLists;
+        if (!data.length) {
+          this.logger.warn(`No seasons found for year ${year}`);
+          return [];
         }
-      }
 
-      throw new HttpException(
-        'Failed to fetch data from F1 API',
-        HttpStatus.SERVICE_UNAVAILABLE,
-      );
-    }
+        const champions = data
+          .map((x) =>
+            x.DriverStandings.filter((y) => y.position === position).map(
+              (standing) => ({
+                ...standing,
+                season: x.season,
+                round: x.round,
+              }),
+            ),
+          )
+          .flat();
+
+        this.logger.log(
+          `Successfully fetched ${champions.length} driver standings for ${year}`,
+        );
+
+        return champions;
+      },
+      `driver standings for year ${year}`,
+      {
+        maxRetries: 3,
+        baseDelayMs: 1000,
+        skipRetryOnStatusCodes: [404],
+        logger: this.logger,
+      },
+    );
   }
 
   /**
@@ -89,13 +89,8 @@ export class ErgastService {
   async fetchSeasonChampions(
     fromYear: number,
     toYear: number,
-  ): Promise<
-    {
-      year: number;
-      champion: ErgastDriverStanding;
-    }[]
-  > {
-    const champions: { year: number; champion: ErgastDriverStanding }[] = [];
+  ): Promise<ErgastDriverStanding[]> {
+    const champions: ErgastDriverStanding[] = [];
 
     this.logger.log(`Fetching champions for seasons ${fromYear} to ${toYear}`);
 
@@ -103,11 +98,11 @@ export class ErgastService {
       try {
         const champion = await this.fetchSeasonChampion(year);
         if (champion) {
-          champions.push({ year, champion });
+          champions.push(champion);
         }
 
         // Add small delay to respect API rate limits
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // await new Promise((resolve) => setTimeout(resolve, 100));
       } catch {
         this.logger.warn(`Failed to fetch champion for year ${year}`);
         // Continue with other years instead of failing completely
