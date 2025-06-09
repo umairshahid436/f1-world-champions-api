@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Race } from '@entities/race.entity';
-import { Driver } from '@entities/driver.entity';
+import { Race } from '@src/database/entities/race.entity';
+import { Driver } from '@src/database/entities/driver.entity';
 import { ErgastRace } from '@modules/external/ergast/ergast.interface';
 
 export interface RaceTransformationResult {

@@ -5,7 +5,7 @@ import { ErgastRace } from '@modules/external/ergast/ergast.interface';
 import { DriversService } from '@modules/drivers/drivers.service';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Race } from '@entities/race.entity';
+import { Race } from '@src/database/entities/race.entity';
 import { SeasonsService } from '@modules/seasons/services/seasons.service';
 
 @Injectable()

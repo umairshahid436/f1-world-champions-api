@@ -7,7 +7,7 @@ import { ResponseInterceptor } from '@interceptors/response.interceptor';
 import { formatValidationErrors } from '@utils/validation.util';
 import { DriversModule } from './drivers/drivers.module';
 import { ConstructorsModule } from './constructors/constructors.module';
-import { DatabaseModule } from './database.module';
+import { DatabaseModule } from '../database/database.module';
 @Module({
   imports: [
     ConfigModule.forRoot({

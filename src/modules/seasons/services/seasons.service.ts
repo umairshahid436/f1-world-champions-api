@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ErgastService } from '@modules/external/ergast/ergast.service';
 import { DataTransformationService } from './data-transformation.service';
-import { Season } from '@entities/season.entity';
+import { Season } from '@src/database/entities/season.entity';
 import { ErgastDriverStanding } from '@modules/external/ergast/ergast.interface';
 import { DriversService } from '@modules/drivers/drivers.service';
 import { ConstructorsService } from '@modules/constructors/constructors.service';

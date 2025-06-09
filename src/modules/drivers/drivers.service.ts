@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Driver } from '@entities/driver.entity';
+import { Driver } from '@src/database/entities/driver.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 

@@ -1,98 +1,314 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🏁 F1 World Champions API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A high-performance **NestJS API** that provides Formula 1 World Champions data and race results from **2005 to present**. Built with a **cache-aside pattern** for optimal performance and reliability.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🎯 **Project Overview**
 
-## Description
+This API serves as the backend for SPA/Mobile applications displaying F1 World Champions and race data. It implements intelligent caching by checking the database first, then fetching from the Ergast F1 API when needed.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### **Key Features**
 
-## Project setup
+- 🏆 **Season Champions**: Get F1 World Champions by year range
+- 🏁 **Race Results**: Fetch race winners for specific seasons
+- ⚡ **Performance Optimized**: Database indexes for sub-millisecond queries
+- 🔄 **Cache-Aside Pattern**: Database-first with Ergast API fallback
+- 🐳 **Docker Ready**: Complete containerized setup
+- 📊 **Data Integrity**: Foreign key relationships and constraints
 
-```bash
-$ npm install
+## 🏗️ **Architecture Diagram**
+
+```mermaid
+graph TB
+    Client[📱 Client App<br/>SPA/Mobile] --> API[🚀 F1 Champions API<br/>NestJS + TypeScript]
+
+    API --> Cache{🔍 Data in DB?}
+    Cache -->|Yes| DB[(🗄️ PostgreSQL<br/>Cache)]
+    Cache -->|No| External[🌐 Ergast F1 API<br/>External Source]
+
+    External --> Transform[🔄 Data Transformation<br/>& Validation]
+    Transform --> Save[💾 Save to Database]
+    Save --> DB
+
+    subgraph "Database Schema"
+        DB --> Seasons[📅 Seasons<br/>year, championDriverId, championConstructorId]
+        DB --> Drivers[🏎️ Drivers<br/>driverId, name, nationality]
+        DB --> Constructors[🏭 Constructors<br/>constructorId, name, nationality]
+        DB --> Races[🏁 Races<br/>seasonYear, driverId, circuitName]
+    end
+
+    subgraph "Performance Optimizations"
+        Indexes[📈 Database Indexes<br/>• seasonYear (races)<br/>• driverId (races)<br/>• Primary Keys]
+        Constraints[🔗 Foreign Key Constraints<br/>• races → seasons<br/>• races → drivers<br/>• seasons → drivers/constructors]
+    end
+
+    DB -.-> Indexes
+    DB -.-> Constraints
+
+    classDef api fill:#e1f5fe
+    classDef db fill:#f3e5f5
+    classDef external fill:#fff3e0
+    classDef perf fill:#e8f5e8
+
+    class API api
+    class DB,Seasons,Drivers,Constructors,Races db
+    class External external
+    class Indexes,Constraints perf
 ```
 
-## Compile and run the project
+## 🛠️ **Tech Stack**
 
-```bash
-# development
-$ npm run start
+| Category             | Technology              |
+| -------------------- | ----------------------- |
+| **Framework**        | NestJS + TypeScript     |
+| **Database**         | PostgreSQL 15           |
+| **ORM**              | TypeORM                 |
+| **Containerization** | Docker + Docker Compose |
+| **External API**     | Ergast F1 API           |
+| **Validation**       | class-validator         |
+| **HTTP Client**      | Axios                   |
 
-# watch mode
-$ npm run start:dev
+## 📡 **API Endpoints**
 
-# production mode
-$ npm run start:prod
+### **🏆 Season Champions**
+
+```http
+GET /api/seasons/champions?fromYear=2020&toYear=2023
 ```
 
-## Run tests
+**Response:**
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```json
+{
+  "data": [
+    {
+      "season": "2023",
+      "points": "575",
+      "championDriver": {
+        "driverId": "max_verstappen",
+        "name": "Max Verstappen"
+      },
+      "championConstructor": {
+        "constructorId": "red_bull",
+        "name": "Red Bull"
+      }
+    }
+  ],
+  "message": "Success",
+  "count": 4
+}
 ```
 
-## Deployment
+### **🏁 Season Races**
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+```http
+GET /api/races/season/2023
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+**Response:**
 
-## Resources
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Bahrain Grand Prix",
+      "date": "2023-03-05",
+      "circuitName": "Bahrain International Circuit",
+      "winnerDriver": {
+        "driverId": "max_verstappen",
+        "name": "Max Verstappen"
+      }
+    }
+  ]
+}
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## 🚀 **Quick Start**
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### **Prerequisites**
 
-## Support
+- Docker & Docker Compose
+- Node.js 20+ (for local development)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### **🐳 Run with Docker (Recommended)**
 
-## Stay in touch
+1. **Clone the repository**
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+   ```bash
+   git clone <repository-url>
+   cd f1-world-champions-api
+   ```
 
-## License
+2. **Start the complete stack**
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+   ```bash
+   docker-compose up -d --build
+   ```
+
+3. **Run database migrations**
+
+   ```bash
+   docker-compose exec f1-api npm run migration:run
+   ```
+
+4. **Test the API**
+   ```bash
+   curl "http://localhost:3000/api/seasons/champions?fromYear=2020&toYear=2023"
+   ```
+
+### **🏠 Local Development**
+
+1. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+2. **Setup environment**
+
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your database credentials
+   ```
+
+3. **Start PostgreSQL**
+
+   ```bash
+   docker-compose up postgres -d
+   ```
+
+4. **Run migrations**
+
+   ```bash
+   npm run migration:run
+   ```
+
+5. **Start development server**
+   ```bash
+   npm run start:dev
+   ```
+
+## 🗄️ **Database Schema**
+
+### **Tables & Relationships**
+
+```sql
+-- Core entities with foreign key relationships
+seasons (year) ← races (seasonYear)
+drivers (driverId) ← races (driverId)
+drivers (driverId) ← seasons (championDriverId)
+constructors (constructorId) ← seasons (championConstructorId)
+```
+
+### **Performance Indexes**
+
+| Table          | Index           | Purpose                         |
+| -------------- | --------------- | ------------------------------- |
+| `races`        | `seasonYear`    | **Main query**: races by season |
+| `races`        | `driverId`      | Race winner lookups             |
+| `drivers`      | `driverId`      | Driver data retrieval           |
+| `constructors` | `constructorId` | Constructor data retrieval      |
+
+## ⚡ **Performance Features**
+
+### **Cache-Aside Pattern**
+
+```typescript
+// 1. Check database first
+const dataFromDB = await repository.findByYear(year);
+if (dataFromDB.length > 0) return dataFromDB;
+
+// 2. Fetch from external API if missing
+const dataFromAPI = await ergastService.fetchData(year);
+
+// 3. Save to database for future requests
+await repository.save(transformedData);
+```
+
+### **Query Optimization**
+
+- **Database indexes** on frequently queried columns
+- **Foreign key constraints** for data integrity
+- **Batched operations** for bulk data processing
+- **Chunked processing** (1000 records per chunk)
+
+## 🐳 **Docker Commands**
+
+### **Management**
+
+```bash
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Reset database
+docker-compose down -v && docker-compose up -d
+
+# Run migrations
+docker-compose exec f1-api npm run migration:run
+```
+
+### **Development**
+
+```bash
+# Build fresh image
+docker-compose build --no-cache
+
+# Access container shell
+docker-compose exec f1-api sh
+
+# View database
+docker-compose exec postgres psql -U f1_user -d f1_champions
+```
+
+## 📊 **Data Flow**
+
+1. **Client Request** → API endpoint
+2. **Database Check** → Query local cache
+3. **Cache Miss** → Fetch from Ergast API
+4. **Data Processing** → Transform & validate
+5. **Database Save** → Store for future requests
+6. **Response** → Return formatted data
+
+## 🔧 **Environment Variables**
+
+```bash
+# Database Configuration
+DB_HOST=postgres
+DB_PORT=5432
+DB_USER=f1_user
+DB_PASSWORD=f1_password
+DB_NAME=f1_champions
+
+# Application
+NODE_ENV=production
+PORT=3000
+```
+
+## 📈 **Monitoring & Health**
+
+- **Health Checks**: Container health monitoring
+- **Logging**: Structured logging with context
+- **Error Handling**: Graceful error responses
+- **Database Monitoring**: Connection health checks
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📝 **License**
+
+This project is licensed under the MIT License.
+
+---
+
+**Built with ❤️ for Formula 1 fans worldwide** 🏁

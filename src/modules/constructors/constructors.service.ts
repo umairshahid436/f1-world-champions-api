@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Constructor } from '@entities/constructor.entity';
+import { Constructor } from '@src/database/entities/constructor.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 

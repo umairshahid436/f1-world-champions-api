@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Season } from '@entities/season.entity';
-import { Driver } from '@entities/driver.entity';
-import { Race } from '@entities/race.entity';
-import { Constructor } from '@entities/constructor.entity';
+import { Season } from '@src/database/entities/season.entity';
+import { Driver } from '@src/database/entities/driver.entity';
+import { Race } from '@src/database/entities/race.entity';
+import { Constructor } from '@src/database/entities/constructor.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -19,10 +20,8 @@ import { Constructor } from '@entities/constructor.entity';
           password: configService.getOrThrow('DB_PASSWORD'),
           database: configService.getOrThrow('DB_NAME'),
           entities: [Season, Driver, Race, Constructor],
-          // entities: ['dist/**/*.entity{.ts,.js}'],
-
           autoLoadEntities: true,
-          synchronize: true,
+          synchronize: false,
         };
       },
     }),
