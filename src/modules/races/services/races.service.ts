@@ -1,30 +1,30 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ErgastService } from '@modules/external/ergast/ergast.service';
-import { RaceDataTransformationService } from './services/data-transformation.service';
-import { RacesRepository } from './repositories/races.repository';
+import { RaceDataTransformationService } from './data-transformation.service';
 import { ErgastRace } from '@modules/external/ergast/ergast.interface';
 import { DriversService } from '@modules/drivers/drivers.service';
-import { DataSource } from 'typeorm';
-import { InjectDataSource } from '@nestjs/typeorm';
+import { EntityManager, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Race } from '@entities/race.entity';
 
 @Injectable()
 export class RacesService {
   private readonly logger = new Logger(RacesService.name);
 
   constructor(
-    private readonly racesRepository: RacesRepository,
+    @InjectRepository(Race)
+    private readonly raceRepository: Repository<Race>,
+    private readonly entityManager: EntityManager,
     private readonly ergastService: ErgastService,
     private readonly raceDataTransformationService: RaceDataTransformationService,
     private readonly driversService: DriversService,
-    @InjectDataSource()
-    private readonly dataSource: DataSource,
   ) {}
 
   async getSeasonRaces(year: number) {
     this.logger.log(`Requesting races for season ${year}`);
     try {
       // Check if data exists in database
-      const racesFromDB = await this.racesRepository.findBySeasonYear(year);
+      const racesFromDB = await this.findBySeasonYear(year);
       if (racesFromDB.length > 0) {
         this.logger.log(`Race data found in database for ${year}`);
         return racesFromDB;
@@ -41,7 +41,7 @@ export class RacesService {
         await this.saveRaces(ergastRaces);
         this.logger.log(`Races saved to database for ${year}`);
       }
-      const races = await this.racesRepository.findBySeasonYear(year);
+      const races = await this.findBySeasonYear(year);
       return races;
     } catch (error) {
       this.logger.error(error);
@@ -51,8 +51,18 @@ export class RacesService {
     }
   }
 
+  private async findBySeasonYear(year: number): Promise<Race[]> {
+    return this.raceRepository.find({
+      where: {
+        seasonYear: year,
+      },
+      relations: {
+        driver: true,
+      },
+    });
+  }
+
   private async saveRaces(ergastRaces: ErgastRace[]) {
-    // Transform API data to database format
     const transformedData =
       this.raceDataTransformationService.transformErgastRaceToDbEntities(
         ergastRaces,
@@ -60,10 +70,10 @@ export class RacesService {
 
     const { drivers, races } = transformedData;
 
-    await this.dataSource.transaction(async (manager) => {
+    await this.entityManager.transaction(async (manager) => {
       await this.driversService.upsertDriversWithTransaction(drivers, manager);
 
-      await this.racesRepository.upsertRaceDataWithTransaction(races, manager);
+      await manager.upsert(Race, races, ['id']);
     });
   }
 }

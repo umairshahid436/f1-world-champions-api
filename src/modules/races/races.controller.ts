@@ -1,5 +1,5 @@
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
-import { RacesService } from './races.service';
+import { RacesService } from './services/races.service';
 import { Serialize } from '@decorators/serialize.decorator';
 import { RaceDto } from './dtos/race.dto';
 

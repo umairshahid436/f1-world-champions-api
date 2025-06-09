@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { RacesService } from './races.service';
+import { RacesService } from './services/races.service';
 import { RacesController } from './races.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Driver } from '@entities/driver.entity';
 import { Race } from '@entities/race.entity';
 import { ErgastModule } from '@modules/external/ergast/ergast.module';
 import { Season } from '@entities/season.entity';
-import { RacesRepository } from './repositories/races.repository';
 import { RaceDataTransformationService } from './services/data-transformation.service';
 import { DriversModule } from '@modules/drivers/drivers.module';
 
@@ -16,7 +15,7 @@ import { DriversModule } from '@modules/drivers/drivers.module';
     DriversModule,
     TypeOrmModule.forFeature([Season, Driver, Race]),
   ],
-  providers: [RacesService, RacesRepository, RaceDataTransformationService],
+  providers: [RacesService, RaceDataTransformationService],
   controllers: [RacesController],
   exports: [],
 })

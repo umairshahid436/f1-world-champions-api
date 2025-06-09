@@ -1,26 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ErgastService } from '@modules/external/ergast/ergast.service';
 import { DataTransformationService } from './data-transformation.service';
-import { SeasonsRepository } from '@modules/seasons/repositories/seasons.repository';
 import { Season } from '@entities/season.entity';
 import { ErgastDriverStanding } from '@modules/external/ergast/ergast.interface';
 import { DriversService } from '@modules/drivers/drivers.service';
 import { ConstructorsService } from '@modules/constructors/constructors.service';
-import { DataSource } from 'typeorm';
-import { InjectDataSource } from '@nestjs/typeorm';
+import { Repository, EntityManager, Between } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class SeasonsService {
   private readonly logger = new Logger(SeasonsService.name);
 
   constructor(
-    private readonly seasonsRepository: SeasonsRepository,
+    @InjectRepository(Season)
+    private readonly repository: Repository<Season>,
+    private readonly entityManager: EntityManager,
     private readonly ergastService: ErgastService,
     private readonly dataTransformationService: DataTransformationService,
     private readonly driversService: DriversService,
     private readonly constructorsService: ConstructorsService,
-    @InjectDataSource()
-    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -38,10 +37,7 @@ export class SeasonsService {
         `Checking if seasons for ${fromYear}-${toYear} exists in db`,
       );
 
-      const seasonsFromDB = await this.seasonsRepository.findByYearRange(
-        fromYear,
-        toYear,
-      );
+      const seasonsFromDB = await this.findByYearRange(fromYear, toYear);
       if (seasonsFromDB.length > 0) {
         this.logger.log(`Seasons for ${fromYear}-${toYear} found in database`);
         return seasonsFromDB;
@@ -65,13 +61,27 @@ export class SeasonsService {
 
       return [];
     } catch (error) {
-      this.logger.error(`Failed to get seasons`, error);
+      this.logger.error(error);
       throw new Error(
         `Failed to get seasons: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }
 
+  private async findByYearRange(fromYear: number, toYear: number) {
+    return this.repository.find({
+      where: {
+        year: Between(fromYear, toYear),
+      },
+      relations: {
+        championDriver: true,
+        championConstructor: true,
+      },
+      order: {
+        year: 'DESC',
+      },
+    });
+  }
   private async saveSeasons(ergastDriverStandings: ErgastDriverStanding[]) {
     try {
       // Transform API data to database format
@@ -81,9 +91,8 @@ export class SeasonsService {
         );
 
       const { drivers, constructors, seasons } = transformedData;
-      // Batch save to database
 
-      await this.dataSource.transaction(async (manager) => {
+      await this.entityManager.transaction(async (manager) => {
         await this.driversService.upsertDriversWithTransaction(
           drivers,
           manager,
@@ -94,15 +103,11 @@ export class SeasonsService {
           manager,
         );
 
-        await this.seasonsRepository.upsertSeasonsWithTransaction(
-          seasons,
-          manager,
-        );
+        await manager.upsert(Season, seasons, ['year']);
       });
 
       return transformedData.seasons;
     } catch (error) {
-      this.logger.error('Failed to save season data:', error);
       throw new Error(
         `failed to save season error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );

@@ -43,15 +43,10 @@ export class DataTransformationService {
 
       if (!driversMap.has(driverData.driverId)) {
         driversMap.set(driverData.driverId, {
-          driverId: driverData.driverId,
-          givenName: driverData.givenName,
-          familyName: driverData.familyName,
-          nationality: driverData.nationality,
+          ...driverData,
           permanentNumber: driverData.permanentNumber
             ? driverData.permanentNumber
             : undefined,
-          code: driverData.code,
-          url: driverData.url,
         });
       }
     }

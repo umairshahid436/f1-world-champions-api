@@ -7,7 +7,6 @@ import { Season } from '@entities/season.entity';
 import { Driver } from '@entities/driver.entity';
 import { Constructor } from '@entities/constructor.entity';
 import { DataTransformationService } from './services/data-transformation.service';
-import { SeasonsRepository } from './repositories/seasons.repository';
 import { DriversModule } from '@modules/drivers/drivers.module';
 import { ConstructorsModule } from '@modules/constructors/constructors.module';
 
@@ -19,7 +18,7 @@ import { ConstructorsModule } from '@modules/constructors/constructors.module';
     ConstructorsModule,
   ],
   controllers: [SeasonsController],
-  providers: [SeasonsService, SeasonsRepository, DataTransformationService],
+  providers: [SeasonsService, DataTransformationService],
   exports: [],
 })
 export class SeasonsModule {}
