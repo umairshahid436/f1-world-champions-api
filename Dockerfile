@@ -38,6 +38,9 @@ COPY --from=builder /app/package.json ./package.json
 # Expose port
 EXPOSE 3000
 
+# Health check using our API endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
 
 # Start the application
 CMD ["npm", "run", "start:prod"] 

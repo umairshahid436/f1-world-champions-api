@@ -1,44 +1,44 @@
 # 🏁 F1 World Champions API
 
-A high-performance **NestJS API** that provides Formula 1 World Champions data and race results from **2005 to present**. Built with a **cache-aside pattern** for optimal performance and reliability.
+A **NestJS API** that provides Formula 1 World Champions data and race results from **2005 to present**.
 
-## 🎯 **Project Overview**
+## **Project Overview**
 
 This API serves as the backend for SPA/Mobile applications displaying F1 World Champions and race data. It implements intelligent caching by checking the database first, then fetching from the Ergast F1 API when needed.
 
 ### **Key Features**
 
-- 🏆 **Season Champions**: Get F1 World Champions by year range
-- 🏁 **Race Results**: Fetch race winners for specific seasons
+- **Season Champions**: Get F1 World Champions by year range
+- **Race Results**: Fetch race winners for specific seasons
 - ⚡ **Performance Optimized**: Database indexes for sub-millisecond queries
-- 🔄 **Cache-Aside Pattern**: Database-first with Ergast API fallback
-- 🐳 **Docker Ready**: Complete containerized setup
-- 📊 **Data Integrity**: Foreign key relationships and constraints
+- **Cache-Aside Pattern**: Database-first with Ergast API fallback
+- **Docker Ready**: Complete containerized setup
+- **Data Integrity**: Foreign key relationships and constraints
 
-## 🏗️ **Architecture Diagram**
+## **Architecture Diagram**
 
 ```mermaid
 graph TB
-    Client[📱 Client App<br/>SPA/Mobile] --> API[🚀 F1 Champions API<br/>NestJS + TypeScript]
+    Client[📱 Client App<br/>SPA/Mobile] --> API[F1 Champions API<br/>NestJS + TypeScript]
 
-    API --> Cache{🔍 Data in DB?}
-    Cache -->|Yes| DB[(🗄️ PostgreSQL<br/>Cache)]
-    Cache -->|No| External[🌐 Ergast F1 API<br/>External Source]
+    API --> Cache{Data in DB?}
+    Cache -->|Yes| DB[(PostgreSQL<br/>Cache)]
+    Cache -->|No| External[Ergast F1 API<br/>External Source]
 
-    External --> Transform[🔄 Data Transformation<br/>& Validation]
-    Transform --> Save[💾 Save to Database]
+    External --> Transform[Data Transformation<br/>& Validation]
+    Transform --> Save[Save to Database]
     Save --> DB
 
     subgraph "Database Schema"
-        DB --> Seasons[📅 Seasons<br/>year, championDriverId, championConstructorId]
-        DB --> Drivers[🏎️ Drivers<br/>driverId, name, nationality]
-        DB --> Constructors[🏭 Constructors<br/>constructorId, name, nationality]
-        DB --> Races[🏁 Races<br/>seasonYear, driverId, circuitName]
+        DB --> Seasons[Seasons<br/>year, championDriverId, championConstructorId]
+        DB --> Drivers[Drivers<br/>driverId, name, nationality]
+        DB --> Constructors[Constructors<br/>constructorId, name, nationality]
+        DB --> Races[Races<br/>seasonYear, driverId, circuitName]
     end
 
     subgraph "Performance Optimizations"
-        Indexes[📈 Database Indexes<br/>• seasonYear (races)<br/>• driverId (races)<br/>• Primary Keys]
-        Constraints[🔗 Foreign Key Constraints<br/>• races → seasons<br/>• races → drivers<br/>• seasons → drivers/constructors]
+        Indexes[Database Indexes<br/>• seasonYear (races)<br/>• driverId (races)<br/>• Primary Keys]
+        Constraints[Foreign Key Constraints<br/>• races → seasons<br/>• races → drivers<br/>• seasons → drivers/constructors]
     end
 
     DB -.-> Indexes
@@ -55,21 +55,21 @@ graph TB
     class Indexes,Constraints perf
 ```
 
-## 🛠️ **Tech Stack**
+## **Tech Stack**
 
 | Category             | Technology              |
 | -------------------- | ----------------------- |
 | **Framework**        | NestJS + TypeScript     |
-| **Database**         | PostgreSQL 15           |
+| **Database**         | PostgreSQL              |
 | **ORM**              | TypeORM                 |
 | **Containerization** | Docker + Docker Compose |
 | **External API**     | Ergast F1 API           |
 | **Validation**       | class-validator         |
 | **HTTP Client**      | Axios                   |
 
-## 📡 **API Endpoints**
+## **API Endpoints**
 
-### **🏆 Season Champions**
+### **Season Champions**
 
 ```http
 GET /api/seasons/champions?fromYear=2020&toYear=2023
@@ -98,7 +98,7 @@ GET /api/seasons/champions?fromYear=2020&toYear=2023
 }
 ```
 
-### **🏁 Season Races**
+### **Season Races**
 
 ```http
 GET /api/races/season/2023
@@ -123,14 +123,14 @@ GET /api/races/season/2023
 }
 ```
 
-## 🚀 **Quick Start**
+## **Quick Start**
 
 ### **Prerequisites**
 
 - Docker & Docker Compose
 - Node.js 20+ (for local development)
 
-### **🐳 Run with Docker (Recommended)**
+### **Run with Docker (Recommended)**
 
 1. **Clone the repository**
 
@@ -156,7 +156,7 @@ GET /api/races/season/2023
    curl "http://localhost:3000/api/seasons/champions?fromYear=2020&toYear=2023"
    ```
 
-### **🏠 Local Development**
+### **Local Development**
 
 1. **Install dependencies**
 
@@ -188,7 +188,7 @@ GET /api/races/season/2023
    npm run start:dev
    ```
 
-## 🗄️ **Database Schema**
+## **Database Schema**
 
 ### **Tables & Relationships**
 
@@ -232,7 +232,7 @@ await repository.save(transformedData);
 - **Batched operations** for bulk data processing
 - **Chunked processing** (1000 records per chunk)
 
-## 🐳 **Docker Commands**
+## **Docker Commands**
 
 ### **Management**
 
@@ -266,7 +266,7 @@ docker-compose exec f1-api sh
 docker-compose exec postgres psql -U f1_user -d f1_champions
 ```
 
-## 📊 **Data Flow**
+## **Data Flow**
 
 1. **Client Request** → API endpoint
 2. **Database Check** → Query local cache
@@ -275,40 +275,24 @@ docker-compose exec postgres psql -U f1_user -d f1_champions
 5. **Database Save** → Store for future requests
 6. **Response** → Return formatted data
 
-## 🔧 **Environment Variables**
+## **Environment Variables**
 
 ```bash
 # Database Configuration
-DB_HOST=postgres
-DB_PORT=5432
-DB_USER=f1_user
-DB_PASSWORD=f1_password
-DB_NAME=f1_champions
+DB_HOST=
+DB_PORT=
+DB_USER=
+DB_PASSWORD=
+DB_NAME=
 
 # Application
 NODE_ENV=production
 PORT=3000
 ```
 
-## 📈 **Monitoring & Health**
+## **Monitoring & Health**
 
 - **Health Checks**: Container health monitoring
 - **Logging**: Structured logging with context
 - **Error Handling**: Graceful error responses
 - **Database Monitoring**: Connection health checks
-
-## 🤝 **Contributing**
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📝 **License**
-
-This project is licensed under the MIT License.
-
----
-
-**Built with ❤️ for Formula 1 fans worldwide** 🏁

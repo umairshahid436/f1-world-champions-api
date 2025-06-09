@@ -8,6 +8,8 @@ import { formatValidationErrors } from '@utils/validation.util';
 import { DriversModule } from './drivers/drivers.module';
 import { ConstructorsModule } from './constructors/constructors.module';
 import { DatabaseModule } from '../database/database.module';
+import { HealthModule } from './health/health.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -15,6 +17,7 @@ import { DatabaseModule } from '../database/database.module';
       envFilePath: ['.env.local', '.env'],
     }),
     DatabaseModule,
+    HealthModule,
     SeasonsModule,
     RacesModule,
     DriversModule,
