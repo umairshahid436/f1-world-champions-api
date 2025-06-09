@@ -5,7 +5,9 @@ import { APP_PIPE, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ResponseInterceptor } from '@interceptors/response.interceptor';
 import { formatValidationErrors } from '@utils/validation.util';
-import { DatabaseModule } from './database/database.module';
+import { DriversModule } from './drivers/drivers.module';
+import { ConstructorsModule } from './constructors/constructors.module';
+import { DatabaseModule } from './database.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -15,6 +17,8 @@ import { DatabaseModule } from './database/database.module';
     DatabaseModule,
     SeasonsModule,
     RacesModule,
+    DriversModule,
+    ConstructorsModule,
   ],
   providers: [
     {

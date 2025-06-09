@@ -1,12 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { RacesService } from './races.service';
+import { Serialize } from '@decorators/serialize.decorator';
+import { RaceDto } from './dtos/race.dto';
 
 @Controller('races')
+@Serialize(RaceDto)
 export class RacesController {
   constructor(private readonly racesService: RacesService) {}
 
-  @Get()
-  findAllRaces() {
-    return this.racesService.findAllRaces();
+  @Get('season/:year')
+  getSeasonRaces(@Param('year', ParseIntPipe) year: number) {
+    return this.racesService.getSeasonRaces(year);
   }
 }

@@ -17,6 +17,7 @@
       "@decorators/*": ["src/decorators/*"],
       "@interceptors/*": ["src/interceptors/*"],
       "@interfaces/*": ["src/interfaces/*"],
+      "@config/*": ["src/config/*"],
       "@src/*": ["src/*"]
     },
     "incremental": true,

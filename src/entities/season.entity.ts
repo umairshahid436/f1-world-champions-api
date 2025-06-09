@@ -1,58 +1,45 @@
 import {
   Entity,
-  PrimaryColumn,
   Column,
   CreateDateColumn,
-  // UpdateDateColumn,
   ManyToOne,
-  // OneToMany,
   JoinColumn,
+  PrimaryColumn,
+  OneToMany,
 } from 'typeorm';
 import { Driver } from './driver.entity';
+import { Race } from './race.entity';
 import { Constructor } from './constructor.entity';
-// import { Race } from './race.entity';
 
 @Entity('seasons')
 export class Season {
   @PrimaryColumn({ type: 'integer' })
   year!: number;
 
-  @Column({ type: 'varchar', length: 10 })
-  round!: string;
-
-  @Column({ type: 'varchar', length: 10 })
-  position!: string;
-
-  @Column({ type: 'varchar', length: 10 })
-  positionText!: string;
-
   @Column({ type: 'varchar', length: 20 })
   points!: string;
 
-  @Column({ type: 'varchar', length: 10 })
-  wins!: string;
+  @Column({ type: 'varchar', length: 50 })
+  championDriverId!: string;
 
   @Column({ type: 'varchar', length: 50 })
-  champion_driver_id!: string;
-
-  @Column({ type: 'varchar', length: 50 })
-  champion_constructor_id!: string;
+  championConstructorId!: string;
 
   @CreateDateColumn()
-  created_at!: Date;
+  createdAt!: Date;
 
   constructor(data: Partial<Season>) {
     Object.assign(this, data);
   }
 
   @ManyToOne(() => Driver, (driver) => driver.seasons)
-  @JoinColumn({ name: 'champion_driver_id' })
-  champion_driver!: Driver;
+  @JoinColumn({ name: 'championDriverId' })
+  championDriver!: Driver;
 
   @ManyToOne(() => Constructor, (constructor) => constructor.seasons)
-  @JoinColumn({ name: 'champion_constructor_id' })
-  champion_constructor!: Constructor;
+  @JoinColumn({ name: 'championConstructorId' })
+  championConstructor!: Constructor;
 
-  // @OneToMany(() => Race, (race) => race.season)
-  // races!: Race[];
+  @OneToMany(() => Race, (race) => race.season)
+  races!: Race[];
 }

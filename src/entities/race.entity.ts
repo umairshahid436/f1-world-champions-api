@@ -1,8 +1,7 @@
 import {
   Entity,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
@@ -12,44 +11,43 @@ import { Driver } from './driver.entity';
 import { Season } from './season.entity';
 
 @Entity('races')
-@Index(['season_year', 'round'])
-@Index(['winner_driver_id'])
+@Index(['seasonYear'])
+@Index(['driverId'])
 export class Race {
-  @PrimaryColumn({ type: 'varchar', length: 50 })
-  id!: string;
-
-  @Column({ type: 'integer' })
-  season_year!: number;
-
-  @Column({ type: 'integer' })
-  round!: number;
+  @PrimaryGeneratedColumn()
+  id!: number;
 
   @Column({ type: 'varchar', length: 100 })
   name!: string;
 
+  @Column({ type: 'varchar', length: 10 })
+  date!: string;
+
+  @Column({ type: 'varchar', length: 10 })
+  time!: string;
+
+  @Column({ type: 'varchar', length: 10 })
+  points!: string;
+
   @Column({ type: 'varchar', length: 100 })
-  circuit_name!: string;
+  circuitName!: string;
 
   @Column({ type: 'varchar', length: 50 })
-  country!: string;
+  driverId!: string;
 
-  @Column({ type: 'date' })
-  date!: Date;
-
-  @Column({ type: 'varchar', length: 50 })
-  winner_driver_id!: string;
-
-  @CreateDateColumn()
-  created_at!: Date;
-
+  @Column({ type: 'integer' })
+  seasonYear!: number;
+  constructor(data: Partial<Race>) {
+    Object.assign(this, data);
+  }
   @UpdateDateColumn()
-  updated_at!: Date;
+  createdAt!: Date;
 
-  @ManyToOne(() => Season)
-  @JoinColumn({ name: 'season_year' })
+  @ManyToOne(() => Season, (season) => season.races)
+  @JoinColumn({ name: 'seasonYear' })
   season!: Season;
 
-  @ManyToOne(() => Driver)
-  @JoinColumn({ name: 'winner_driver_id' })
-  winner_driver!: Driver;
+  @ManyToOne(() => Driver, (driver) => driver.races)
+  @JoinColumn({ name: 'driverId' })
+  driver!: Driver;
 }

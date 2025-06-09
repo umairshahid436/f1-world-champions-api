@@ -5,7 +5,7 @@ import { ErgastService } from './ergast.service';
 @Module({
   imports: [
     HttpModule.register({
-      timeout: 10000, // 10 seconds timeout
+      timeout: 30000, // 10 seconds timeout
       maxRedirects: 3,
       headers: {
         'User-Agent': 'F1-World-Champions-API/1.0',

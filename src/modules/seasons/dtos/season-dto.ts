@@ -1,32 +1,19 @@
 import { Expose, Transform, Type } from 'class-transformer';
 import { Season } from '@entities/season.entity';
 
-export class ChampionDto {
+export class ChampionDriverDto {
   @Expose()
-  id!: string;
-
-  @Expose()
-  permanentNumber?: string;
-
-  @Expose()
-  code!: string;
-
-  @Expose()
-  url!: string;
+  driverId!: string;
 
   @Expose()
   name!: string;
 }
-export class ConstructorDto {
+export class ChampionConstructorDto {
   @Expose()
   id!: string;
 
   @Expose()
   name!: string;
-  @Expose()
-  nationality!: string;
-  @Expose()
-  url!: string;
 }
 
 export class SeasonDto {
@@ -35,39 +22,22 @@ export class SeasonDto {
   season!: string;
 
   @Expose()
-  @Transform(({ obj }: { obj: Season }) => obj.round)
-  round!: string;
-
-  @Expose()
-  @Transform(({ obj }: { obj: Season }) => obj.position)
-  position!: string;
-
-  @Expose()
   @Transform(({ obj }: { obj: Season }) => obj.points)
   points!: string;
 
   @Expose()
-  @Transform(({ obj }: { obj: Season }) => obj.wins)
-  wins!: string;
+  @Type(() => ChampionDriverDto)
+  @Transform(({ obj }: { obj: Season }) => ({
+    driverId: obj.championDriver.driverId,
+    name: `${obj.championDriver.givenName} ${obj.championDriver.familyName}`,
+  }))
+  championDriver!: ChampionDriverDto;
 
   @Expose()
-  @Type(() => ChampionDto)
+  @Type(() => ChampionConstructorDto)
   @Transform(({ obj }: { obj: Season }) => ({
-    id: obj.champion_driver.id,
-    permanentNumber: obj.champion_driver.permanent_number,
-    code: obj.champion_driver.code,
-    url: obj.champion_driver.url,
-    name: `${obj.champion_driver.given_name} ${obj.champion_driver.family_name}`,
+    constructorId: obj.championConstructor.constructorId,
+    name: obj.championConstructor.name,
   }))
-  championDriver!: ChampionDto;
-
-  @Expose()
-  @Type(() => ConstructorDto)
-  @Transform(({ obj }: { obj: Season }) => ({
-    id: obj.champion_constructor.constructorId,
-    url: obj.champion_constructor.url,
-    name: obj.champion_constructor.name,
-    nationality: obj.champion_constructor.nationality,
-  }))
-  championConstructor!: ConstructorDto;
+  championConstructor!: ChampionConstructorDto;
 }

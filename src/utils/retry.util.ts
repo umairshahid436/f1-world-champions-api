@@ -1,103 +1,48 @@
 import { Logger } from '@nestjs/common';
+import { timer, throwError } from 'rxjs';
+import { AxiosError } from 'axios';
 
-export interface RetryOptions {
-  maxRetries?: number;
-  baseDelayMs?: number;
-  skipRetryOnStatusCodes?: number[];
+export interface RetryConfig {
+  maxRetries: number;
+  baseDelayMs: number;
+  maxDelay: number;
+  retryOnStatus: number[];
   logger?: Logger;
 }
 
-export interface RetryResult<T> {
-  success: boolean;
-  data?: T;
-  attempts: number;
-  lastError?: any;
-}
-
 /**
- * Retry function with exponential backoff
- * @param fn - The async function to retry
- * @param context - Context for logging (e.g., "API call for user 123")
- * @param options - Retry configuration options
- * @returns Promise<T>
+ * Modern retry configuration for RxJS retry operator
  */
-export async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
-  context: string,
-  options: RetryOptions = {},
-): Promise<T> {
-  const {
-    maxRetries = 3,
-    baseDelayMs = 1000,
-    skipRetryOnStatusCodes = [404],
-    logger,
-  } = options;
+export const createRetryConfig = (config: RetryConfig) => ({
+  count: config.maxRetries,
+  delay: (error: AxiosError, retryCount: number) => {
+    const status = error.response?.status;
 
-  let lastError: any;
+    config.logger?.warn(
+      `Request failed with status ${status}: ${error.message}`,
+    );
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      const result = await fn();
-
-      return result;
-    } catch (error) {
-      lastError = error;
-
-      // Check if we should skip retry for specific status codes
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response: { status: number } };
-        if (skipRetryOnStatusCodes.includes(axiosError.response.status)) {
-          if (logger) {
-            logger.warn(
-              `${context} failed with status ${axiosError.response.status} - not retrying`,
-            );
-          }
-          throw error;
-        }
-      }
-
-      if (attempt === maxRetries) {
-        if (logger) {
-          logger.error(`Failed ${context} after ${maxRetries} attempts`);
-        }
-        break;
-      }
-
-      const delayMs = baseDelayMs * Math.pow(2, attempt - 1); // Exponential backoff
-      if (logger) {
-        logger.warn(
-          `Attempt ${attempt}/${maxRetries} failed for ${context}, retrying in ${delayMs}ms...`,
-        );
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    // Check if we should retry based on status code
+    if (status && !config.retryOnStatus?.includes(status)) {
+      config.logger?.error(`Non retryable error: ${status}`);
+      return throwError(() => error);
     }
-  }
 
-  throw lastError;
-}
+    const delayMs = calculateBackoffDelay(retryCount - 1, config);
+    config.logger?.log(
+      `Retry attempt ${retryCount}/${config.maxRetries} in ${delayMs}ms`,
+    );
 
-/**
- * Retry function that returns a result object instead of throwing
- * Useful for batch operations where you want to track partial failures
- */
-export async function retryWithBackoffSafe<T>(
-  fn: () => Promise<T>,
-  context: string,
-  options: RetryOptions = {},
-): Promise<RetryResult<T>> {
-  try {
-    const data = await retryWithBackoff(fn, context, options);
-    return {
-      success: true,
-      data,
-      attempts: 1,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      lastError: error,
-      attempts: options.maxRetries || 3,
-    };
-  }
-}
+    return timer(delayMs);
+  },
+  resetOnSuccess: true,
+});
+
+const calculateBackoffDelay = (
+  attempt: number,
+  config: RetryConfig,
+): number => {
+  const exponentialDelay = config.baseDelayMs * Math.pow(2, attempt);
+  const delay = exponentialDelay * (0.5 + Math.random());
+  return Math.min(delay, config.maxDelay);
+};

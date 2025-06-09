@@ -35,6 +35,8 @@
     "editor.insertSpaces": true
   },
   "cSpell.words": [
-    "Ergast"
+    "dtos",
+    "Ergast",
+    "retryable"
   ]
 } 

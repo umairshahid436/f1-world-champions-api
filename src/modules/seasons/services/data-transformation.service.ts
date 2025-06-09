@@ -17,34 +17,25 @@ export class DataTransformationService {
   /**
    * Transform Ergast API data to database entities
    */
-  transformErgastApiDataToDbEntities(
+  transformErgastDriverStandingsToEntities(
     ergastData: ErgastDriverStanding[],
   ): TransformedData {
-    try {
-      const uniqueDriversMap = this.extractUniqueDrivers(ergastData);
-      const drivers = Array.from(uniqueDriversMap.values());
+    const uniqueDriversMap = this.extractUniqueDrivers(ergastData);
+    const drivers = Array.from(uniqueDriversMap.values());
 
-      const uniqueConstructorsMap = this.extractUniqueConstructors(ergastData);
-      const constructors = Array.from(uniqueConstructorsMap.values());
+    const uniqueConstructorsMap = this.extractUniqueConstructors(ergastData);
+    const constructors = Array.from(uniqueConstructorsMap.values());
 
-      const seasons = this.transformSeasons(ergastData);
+    const seasons = this.transformSeasons(ergastData);
 
-      return {
-        drivers,
-        constructors,
-        seasons,
-      };
-    } catch (error) {
-      this.logger.error('Failed to transform Ergast data:', error);
-      throw new Error(
-        `Data transformation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
-    }
+    return {
+      drivers,
+      constructors,
+      seasons,
+    };
   }
 
-  private extractUniqueDrivers(
-    ergastData: ErgastDriverStanding[],
-  ): Map<string, Partial<Driver>> {
+  extractUniqueDrivers(ergastData: ErgastDriverStanding[]) {
     const driversMap = new Map<string, Partial<Driver>>();
 
     for (const standing of ergastData) {
@@ -52,11 +43,11 @@ export class DataTransformationService {
 
       if (!driversMap.has(driverData.driverId)) {
         driversMap.set(driverData.driverId, {
-          id: driverData.driverId,
-          given_name: driverData.givenName,
-          family_name: driverData.familyName,
+          driverId: driverData.driverId,
+          givenName: driverData.givenName,
+          familyName: driverData.familyName,
           nationality: driverData.nationality,
-          permanent_number: driverData.permanentNumber
+          permanentNumber: driverData.permanentNumber
             ? driverData.permanentNumber
             : undefined,
           code: driverData.code,
@@ -68,9 +59,7 @@ export class DataTransformationService {
     return driversMap;
   }
 
-  private extractUniqueConstructors(
-    ergastData: ErgastDriverStanding[],
-  ): Map<string, Partial<Constructor>> {
+  extractUniqueConstructors(ergastData: ErgastDriverStanding[]) {
     const constructorsMap = new Map<string, Partial<Constructor>>();
 
     for (const standing of ergastData) {
@@ -94,14 +83,11 @@ export class DataTransformationService {
       (standing) =>
         new Season({
           year: parseInt(standing.season),
-          round: standing.round,
-          position: standing.position,
-          positionText: standing.position,
           points: standing.points,
-          wins: standing.wins,
-          champion_driver_id: standing.Driver.driverId,
-          champion_constructor_id:
-            standing.Constructors[0]?.constructorId || '',
+          championDriverId: standing.Driver.driverId,
+          championDriver: standing.Driver as Driver,
+          championConstructor: standing.Constructors[0] as Constructor,
+          championConstructorId: standing.Constructors[0]?.constructorId || '',
         }),
     );
   }

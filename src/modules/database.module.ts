@@ -19,6 +19,8 @@ import { Constructor } from '@entities/constructor.entity';
           password: configService.getOrThrow('DB_PASSWORD'),
           database: configService.getOrThrow('DB_NAME'),
           entities: [Season, Driver, Race, Constructor],
+          // entities: ['dist/**/*.entity{.ts,.js}'],
+
           autoLoadEntities: true,
           synchronize: true,
         };

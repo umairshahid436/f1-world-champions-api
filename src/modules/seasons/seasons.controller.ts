@@ -9,7 +9,7 @@ import { SeasonQueryDto } from './dtos/season-query.dto';
 export class SeasonsController {
   constructor(private readonly seasonsService: SeasonsService) {}
 
-  @Get('')
+  @Get('champions')
   getSeasonsChampions(@Query() query: SeasonQueryDto) {
     const { fromYear, toYear } = query;
     return this.seasonsService.getSeasonsChampions(fromYear, toYear);

@@ -4,6 +4,10 @@ import { DataTransformationService } from './data-transformation.service';
 import { SeasonsRepository } from '@modules/seasons/repositories/seasons.repository';
 import { Season } from '@entities/season.entity';
 import { ErgastDriverStanding } from '@modules/external/ergast/ergast.interface';
+import { DriversService } from '@modules/drivers/drivers.service';
+import { ConstructorsService } from '@modules/constructors/constructors.service';
+import { DataSource } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 @Injectable()
 export class SeasonsService {
@@ -13,11 +17,15 @@ export class SeasonsService {
     private readonly seasonsRepository: SeasonsRepository,
     private readonly ergastService: ErgastService,
     private readonly dataTransformationService: DataTransformationService,
+    private readonly driversService: DriversService,
+    private readonly constructorsService: ConstructorsService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
-   * Main method: Get seasons data with automatic caching
-   * Cache-aside pattern: Check DB first, fetch from API if missing
+   * Main method: Get seasons data
+   * Check DB first, fetch from API if missing
    */
   async getSeasonsChampions(
     fromYear: number,
@@ -26,17 +34,23 @@ export class SeasonsService {
     this.logger.log(`Requesting seasons ${fromYear}-${toYear}`);
     try {
       // Check if data exists in database
+      this.logger.log(
+        `Checking if seasons for ${fromYear}-${toYear} exists in db`,
+      );
+
       const seasonsFromDB = await this.seasonsRepository.findByYearRange(
         fromYear,
         toYear,
       );
       if (seasonsFromDB.length > 0) {
-        this.logger.log(`Data found in database`);
+        this.logger.log(`Seasons for ${fromYear}-${toYear} found in database`);
         return seasonsFromDB;
       }
 
       // Fetch data from External API (ergast)
-      this.logger.log(`Data not found in database`);
+      this.logger.log(
+        `Seasons for for ${fromYear}-${toYear} not found in database`,
+      );
       this.logger.log(`Fetching data from External API (ergast)`);
 
       const seasonsFromApi = await this.ergastService.fetchSeasonChampions(
@@ -46,8 +60,7 @@ export class SeasonsService {
 
       if (seasonsFromApi.length > 0) {
         const savedSeasons = await this.saveSeasons(seasonsFromApi);
-        this.logger.log(`Seasons saved to database`);
-        return savedSeasons;
+        return savedSeasons.sort((a, b) => b.year - a.year);
       }
 
       return [];
@@ -59,29 +72,39 @@ export class SeasonsService {
     }
   }
 
-  private async saveSeasons(
-    dataFromApi: ErgastDriverStanding[],
-  ): Promise<Season[]> {
+  private async saveSeasons(ergastDriverStandings: ErgastDriverStanding[]) {
     try {
       // Transform API data to database format
       const transformedData =
-        this.dataTransformationService.transformErgastApiDataToDbEntities(
-          dataFromApi,
+        this.dataTransformationService.transformErgastDriverStandingsToEntities(
+          ergastDriverStandings,
         );
 
+      const { drivers, constructors, seasons } = transformedData;
       // Batch save to database
-      await this.seasonsRepository.batchUpsertSeasonData(
-        transformedData.drivers,
-        transformedData.constructors,
-        transformedData.seasons,
-      );
 
-      this.logger.log(` Successfully cached  constructors`);
+      await this.dataSource.transaction(async (manager) => {
+        await this.driversService.upsertDriversWithTransaction(
+          drivers,
+          manager,
+        );
+
+        await this.constructorsService.upsertConstructorsWithTransaction(
+          constructors,
+          manager,
+        );
+
+        await this.seasonsRepository.upsertSeasonsWithTransaction(
+          seasons,
+          manager,
+        );
+      });
+
       return transformedData.seasons;
     } catch (error) {
-      this.logger.error('Failed to cache season data:', error);
+      this.logger.error('Failed to save season data:', error);
       throw new Error(
-        `Caching failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `failed to save season error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
     }
   }
