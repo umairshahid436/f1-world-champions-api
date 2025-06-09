@@ -8,11 +8,13 @@ import { ErgastModule } from '@modules/external/ergast/ergast.module';
 import { Season } from '@entities/season.entity';
 import { RaceDataTransformationService } from './services/data-transformation.service';
 import { DriversModule } from '@modules/drivers/drivers.module';
+import { SeasonsModule } from '@modules/seasons/seasons.module';
 
 @Module({
   imports: [
     ErgastModule,
     DriversModule,
+    SeasonsModule,
     TypeOrmModule.forFeature([Season, Driver, Race]),
   ],
   providers: [RacesService, RaceDataTransformationService],

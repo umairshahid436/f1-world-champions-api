@@ -68,6 +68,15 @@ export class SeasonsService {
     }
   }
 
+  findByYear(year: number): Promise<Season | null> {
+    return this.repository.findOne({
+      where: { year },
+      select: {
+        year: true,
+      },
+    });
+  }
+
   private async findByYearRange(fromYear: number, toYear: number) {
     return this.repository.find({
       where: {

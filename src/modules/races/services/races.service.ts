@@ -6,6 +6,7 @@ import { DriversService } from '@modules/drivers/drivers.service';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Race } from '@entities/race.entity';
+import { SeasonsService } from '@modules/seasons/services/seasons.service';
 
 @Injectable()
 export class RacesService {
@@ -18,6 +19,7 @@ export class RacesService {
     private readonly ergastService: ErgastService,
     private readonly raceDataTransformationService: RaceDataTransformationService,
     private readonly driversService: DriversService,
+    private readonly seasonsService: SeasonsService,
   ) {}
 
   async getSeasonRaces(year: number) {
@@ -38,16 +40,19 @@ export class RacesService {
       this.logger.log(`Race data fetched from External API (ergast)`);
 
       if (ergastRaces.length > 0) {
-        await this.saveRaces(ergastRaces);
-        this.logger.log(`Races saved to database for ${year}`);
+        const seasonExists = await this.seasonsService.findByYear(year);
+        if (!seasonExists) {
+          throw new Error(`Season ${year} not exist`);
+        } else {
+          const savedRaces = await this.saveRaces(ergastRaces);
+          this.logger.log(`Races saved to database for ${year}`);
+          return savedRaces;
+        }
       }
-      const races = await this.findBySeasonYear(year);
-      return races;
+      return [];
     } catch (error) {
       this.logger.error(error);
-      throw new Error(
-        `Failed to get races: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+      throw new Error('Something went wrong while getting races');
     }
   }
 
@@ -75,5 +80,6 @@ export class RacesService {
 
       await manager.upsert(Race, races, ['id']);
     });
+    return races;
   }
 }

@@ -19,15 +19,14 @@ export class RaceDataTransformationService {
 
     for (const ergastRace of ergastRaces) {
       const winner = ergastRace.Results[0];
-      const driver: Driver = {
+      const driver = new Driver({
         ...winner.Driver,
         permanentNumber: winner.Driver.permanentNumber || '',
-        createdAt: new Date(),
-      } as Driver;
+      });
       if (!driversMap.has(driver.driverId)) {
         driversMap.set(driver.driverId, driver);
       }
-      const race = {
+      const race = new Race({
         seasonYear: parseInt(ergastRace.season),
         points: winner.points,
         name: ergastRace.raceName,
@@ -35,7 +34,8 @@ export class RaceDataTransformationService {
         time: ergastRace.time || '',
         circuitName: ergastRace.Circuit.circuitName,
         driverId: winner.Driver.driverId,
-      } as Race;
+        driver: driver,
+      });
       races.push(race);
     }
 
