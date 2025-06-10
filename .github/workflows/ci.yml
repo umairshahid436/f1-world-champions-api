@@ -137,13 +137,20 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{github.event.repository.name}}
+          images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
           tags: |
+            # Branch names (sanitized)
             type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            # PR numbers
+            type=ref,event=pr,prefix=pr-
+            # Git commit SHA with branch prefix (only for branches)
+            type=sha,prefix={{branch}}-,enable={{is_default_branch}}
+            type=sha,prefix=develop-,enable=${{ github.ref == 'refs/heads/develop' }}
+            # Named tags for specific branches
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+            # Latest tag for main branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
@@ -198,23 +205,24 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/f1-world-champions-api
+          images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
           tags: |
-            # Branch-based tags
+            # Branch names (sanitized)
             type=ref,event=branch
             # Semantic versioning tags
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            # Main tag for main branch
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            # Development tag for develop branch
+            # Named tags for specific branches
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+            # Latest tag for main branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Push Docker image
         run: |
           # Get the image ID from the loaded image
-          IMAGE_ID=$(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep "f1-world-champions-api" | head -1 | awk '{print $2}')
+          IMAGE_ID=$(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep "${{ github.event.repository.name }}" | head -1 | awk '{print $2}')
 
           # Tag and push each tag from metadata
           echo '${{ steps.meta.outputs.tags }}' | tr ',' '\n' | while read -r tag; do
