@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/prettierrc",
   "semi": true,
   "singleQuote": true,
   "printWidth": 80,
@@ -6,7 +7,9 @@
   "useTabs": false,
   "bracketSpacing": true,
   "bracketSameLine": true,
-  "arrowParens": "avoid",
+  "arrowParens": "always",
   "quoteProps": "as-needed",
-  "jsxSingleQuote": true
+  "jsxSingleQuote": true,
+  "trailingComma": "all",
+  "endOfLine": "lf"
 }

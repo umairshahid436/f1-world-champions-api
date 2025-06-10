@@ -1,98 +1,210 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🏁 F1 World Champions API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A **NestJS API** that provides Formula 1 World Champions data and race results from **2005 to present**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## **Project Overview**
 
-## Description
+This API serves as the backend for SPA/Mobile applications displaying F1 World Champions and race data. It implements intelligent caching by checking the database first, then fetching from the Ergast F1 API when needed.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### **Key Features**
 
-## Project setup
+- **Season Champions**: Get F1 World Champions by year range
+- **Race Results**: Fetch race winners for specific seasons
+- **Performance Optimized**: Database indexes for sub-millisecond queries
+- **Cache-Aside Pattern**: Database-first with Ergast API fallback
+- **Docker Ready**: Complete containerized setup
+- **Data Integrity**: Foreign key relationships and constraints
 
-```bash
-$ npm install
+## **Tech Stack**
+
+| Category             | Technology              |
+| -------------------- | ----------------------- |
+| **Framework**        | NestJS + TypeScript     |
+| **Database**         | PostgreSQL              |
+| **ORM**              | TypeORM                 |
+| **Containerization** | Docker + Docker Compose |
+| **External API**     | Ergast F1 API           |
+| **Validation**       | class-validator         |
+| **HTTP Client**      | Axios                   |
+
+## **API Endpoints**
+
+### **Season Champions**
+
+```http
+GET /api/seasons/champions?fromYear=2020&toYear=2023
 ```
 
-## Compile and run the project
+**Response:**
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```json
+{
+  "data": [
+    {
+      "season": "2023",
+      "points": "575",
+      "championDriver": {
+        "driverId": "max_verstappen",
+        "name": "Max Verstappen"
+      },
+      "championConstructor": {
+        "constructorId": "red_bull",
+        "name": "Red Bull"
+      }
+    }
+  ],
+  "message": "Success",
+  "count": 4
+}
 ```
 
-## Run tests
+### **Season Races**
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+```http
+GET /api/races/season/2023
 ```
 
-## Deployment
+**Response:**
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Bahrain Grand Prix",
+      "date": "2023-03-05",
+      "circuitName": "Bahrain International Circuit",
+      "winnerDriver": {
+        "driverId": "max_verstappen",
+        "name": "Max Verstappen"
+      }
+    }
+  ]
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## **Quick Start**
 
-## Resources
+### **Prerequisites**
 
-Check out a few resources that may come in handy when working with NestJS:
+- Docker & Docker Compose
+- Node.js 20+ (for local development)
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### **Run with Docker (Recommended)**
 
-## Support
+1. **Clone the repository**
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+   ```bash
+   git clone <repository-url>
+   cd f1-world-champions-api
+   ```
 
-## Stay in touch
+2. **Start the complete stack**
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+   ```bash
+   docker-compose up -d --build
+   ```
 
-## License
+3. **Run database migrations**
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+   ```bash
+   docker-compose exec f1-api npm run migration:run
+   ```
+
+4. **Test the API**
+   ```bash
+   curl "http://localhost:3000/api/seasons/champions?fromYear=2020&toYear=2023"
+   ```
+
+### **Local Development**
+
+1. **Install dependencies**
+
+   ```bash
+   npm install
+   ```
+
+2. **Setup environment**
+
+   ```bash
+   cp .env
+   # Edit .env with required variables
+   ```
+
+3. **Start PostgreSQL**
+
+   ```bash
+   docker-compose up postgres -d
+   ```
+
+4. **Run migrations**
+
+   ```bash
+   npm run migration:run
+   ```
+
+5. **Start development server**
+   ```bash
+   npm run start:dev
+   ```
+
+## **Database Schema**
+
+### **Tables & Relationships**
+
+```sql
+-- Core entities with foreign key relationships
+seasons (year) ← races (seasonYear)
+drivers (driverId) ← races (driverId)
+drivers (driverId) ← seasons (championDriverId)
+constructors (constructorId) ← seasons (championConstructorId)
+```
+
+### **Performance Indexes**
+
+| Table          | Index           | Purpose                         |
+| -------------- | --------------- | ------------------------------- |
+| `races`        | `seasonYear`    | **Main query**: races by season |
+| `races`        | `driverId`      | Race winner lookups             |
+| `drivers`      | `driverId`      | Driver data retrieval           |
+| `constructors` | `constructorId` | Constructor data retrieval      |
+
+### **Query Optimization**
+
+- **Database indexes** on frequently queried columns
+- **Foreign key constraints** for data integrity
+
+## **Docker Commands**
+
+## **Data Flow**
+
+1. **Client Request** → API endpoint
+2. **Database Check** → Query database
+3. **DB Miss** → Fetch from Ergast API
+4. **Data Processing** → Transform & validate
+5. **Database Save** → Store for future requests
+6. **Response** → Return data
+
+## **Environment Variables**
+
+```bash
+# app confg
+NODE_ENV=***
+PORT=***
+
+# docker config
+BUILD_TARGET=***
+VOLUME_MODE=***
+
+# DB config
+DB_HOST=***
+DB_PORT=***
+DB_USER=***
+DB_PASSWORD=***
+DB_NAME=***
+
+# pgAdmin confg
+PGADMIN_EMAIL=***
+PGADMIN_PASSWORD=***
+PGADMIN_PORT=***
+```

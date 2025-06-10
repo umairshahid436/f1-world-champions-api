@@ -22,14 +22,6 @@ jobs:
 
       - name: Setup node and install dependencies
         uses: ./.github/actions/setup-node-dependencies
-        with:
-          db-port: ${{ secrets.DB_PORT }}
-          db-user: ${{ secrets.DB_USER }}
-          db-password: ${{ secrets.DB_PASSWORD }}
-          db-name: ${{ secrets.DB_NAME }}
-          app-port: ${{ secrets.PORT }}
-          node-env: production
-          db-host: postgres
 
   # Stage 2: Linting
   linting:
@@ -83,7 +75,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup
+      - name: setup-node-dependencies
         uses: ./.github/actions/setup-node-dependencies
 
       - name: Initialize CodeQL
@@ -97,7 +89,6 @@ jobs:
         with:
           category: '/language:javascript-typescript'
           upload: true
-
       - name: Check Dependencies Security
         run: |
           echo "Checking dependencies for security vulnerabilities..."
@@ -119,26 +110,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup
+      - name: setup-node-dependencies
         uses: ./.github/actions/setup-node-dependencies
 
-      - name: Build application
-        run: npm run build
-
-  # Stage 6: Docker Build & Publish
-  docker:
-    name: Docker Publish
-    runs-on: ubuntu-latest
-    needs: [install-dependencies, linting, test, security, build]
-    # Only run when PR is successfully merged into main/develop or on version tags
-    if: success() && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup with .env file
-        uses: ./.github/actions/setup-node-dependencies
+      - name: Create .env file
+        uses: ./.github/actions/create-env-file
         with:
           db-port: ${{ secrets.DB_PORT }}
           db-user: ${{ secrets.DB_USER }}
@@ -148,7 +124,33 @@ jobs:
           node-env: production
           db-host: postgres
 
-      - name: Set up Docker Build
+      - name: Build application
+        run: npm run build
+
+  # Stage 6: Docker Build & Publish
+  docker:
+    name: Docker Publish
+    runs-on: ubuntu-latest
+    needs: [install-dependencies, linting, test, security, build]
+    # Only run on main/develop branches or tags, not on PRs
+    if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        uses: ./.github/actions/create-env-file
+        with:
+          db-port: ${{ secrets.DB_PORT }}
+          db-user: ${{ secrets.DB_USER }}
+          db-password: ${{ secrets.DB_PASSWORD }}
+          db-name: ${{ secrets.DB_NAME }}
+          app-port: ${{ secrets.PORT }}
+          node-env: production
+          db-host: postgres
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
@@ -227,3 +229,27 @@ jobs:
           github-base-ref: ${{ github.base_ref }}
           github-ref-name: ${{ github.ref_name }}
           default-branch: ${{ github.event.repository.default_branch }}
+
+      - name: Docker Summary
+        if: needs.docker.result != 'skipped'
+        run: |
+          echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build | ${{ needs.docker.result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.docker.result }}" = "success" ]; then
+            echo "### 📦 Published Images" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Registry:** Docker Hub" >> $GITHUB_STEP_SUMMARY
+            echo "- **Repository:** \`${{ secrets.DOCKERHUB_USERNAME }}/f1-world-champions-api\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🚀 Usage" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "docker pull ${{ secrets.DOCKERHUB_USERNAME }}/f1-world-champions-api:${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          fi
