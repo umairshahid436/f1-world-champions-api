@@ -10,6 +10,18 @@ on:
   push:
     branches: [main, develop]
 
+# Define once, use selectively
+env:
+  # Database Configuration
+  DB_HOST: postgres
+  DB_PORT: ${{ secrets.DB_PORT }}
+  DB_USER: ${{ secrets.DB_USER }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+  DB_NAME: ${{ secrets.DB_NAME }}
+  # Application Configuration
+  APP_PORT: ${{ secrets.PORT }}
+  NODE_ENV: production
+
 jobs:
   # Stage 1: Install Dependencies
   install-dependencies:
@@ -19,17 +31,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup node and install dependencies
+      - name: Setup
         uses: ./.github/actions/setup-node-dependencies
-        with:
-          db-port: ${{ secrets.DB_PORT }}
-          db-user: ${{ secrets.DB_USER }}
-          db-password: ${{ secrets.DB_PASSWORD }}
-          db-name: ${{ secrets.DB_NAME }}
-          app-port: ${{ secrets.PORT }}
-          node-env: production
-          db-host: postgres
 
   # Stage 2: Linting
   linting:
@@ -41,8 +44,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: setup-node-dependencies
+      - name: Setup
         uses: ./.github/actions/setup-node-dependencies
+        with:
+          create-env: 'false'
 
       - name: Run ESLint
         run: npm run lint
@@ -54,15 +59,16 @@ jobs:
     permissions:
       pull-requests: write
       checks: write
-
     needs: install-dependencies
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: setup-node-dependencies
+      - name: Setup
         uses: ./.github/actions/setup-node-dependencies
+        with:
+          create-env: 'false'
 
       - name: Run tests
         run: npm run test:cov
@@ -85,6 +91,8 @@ jobs:
 
       - name: Setup
         uses: ./.github/actions/setup-node-dependencies
+        with:
+          create-env: 'false'
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -109,8 +117,8 @@ jobs:
             exit 1
           fi
 
-  # Stage 5: Build
-  build:
+  # Stage 5: Docker Build
+  docker-build:
     name: Build
     runs-on: ubuntu-latest
     needs: [install-dependencies, linting, test, security]
@@ -122,34 +130,62 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup-node-dependencies
 
-      - name: Build application
-        run: npm run build
+      - name: Set up Docker Build
+        uses: docker/setup-buildx-action@v3
 
-  # Stage 6: Docker Build & Publish
-  docker:
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{github.event.repository.name}}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: production
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/f1-api-image.tar
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{github.sha}}
+          path: /tmp/f1-api-image.tar
+          retention-days: 1
+
+  # Stage 6: Docker Publish
+  docker-publish:
     name: Docker Publish
     runs-on: ubuntu-latest
-    needs: [install-dependencies, linting, test, security, build]
+    needs: [docker-build]
     # Only run when PR is successfully merged into main/develop or on version tags
     if: success() && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup with .env file
-        uses: ./.github/actions/setup-node-dependencies
-        with:
-          db-port: ${{ secrets.DB_PORT }}
-          db-user: ${{ secrets.DB_USER }}
-          db-password: ${{ secrets.DB_PASSWORD }}
-          db-name: ${{ secrets.DB_NAME }}
-          app-port: ${{ secrets.PORT }}
-          node-env: production
-          db-host: postgres
-
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@v3
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image-${{github.sha}}
+          path: /tmp
+      - name: Load Docker image
+        run: |
+          docker load --input /tmp/f1-api-image.tar
+          docker image ls -a
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -170,43 +206,38 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            # Latest tag for main branch
-            type=raw,value=latest,enable={{is_default_branch}}
+            # Main tag for main branch
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             # Development tag for develop branch
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          target: production
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            PORT=3000
+      - name: Push Docker image
+        run: |
+          # Get the image ID from the loaded image
+          IMAGE_ID=$(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep "f1-world-champions-api" | head -1 | awk '{print $2}')
 
-      - name: Security scan with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/f1-world-champions-api:${{ github.ref_name }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
+          # Tag and push each tag from metadata
+          echo '${{ steps.meta.outputs.tags }}' | tr ',' '\n' | while read -r tag; do
+            if [ ! -z "$tag" ]; then
+              echo "Tagging and pushing: $tag"
+              docker tag $IMAGE_ID $tag
+              docker push $tag
+            fi
+          done
 
   # Stage 7: Summary
   pipeline-summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [install-dependencies, linting, test, security, build, docker]
+    needs:
+      [
+        install-dependencies,
+        linting,
+        test,
+        security,
+        docker-build,
+        docker-publish,
+      ]
     if: always()
 
     steps:
@@ -220,8 +251,8 @@ jobs:
           linting-result: ${{ needs.linting.result }}
           test-result: ${{ needs.test.result }}
           security-result: ${{ needs.security.result }}
-          build-result: ${{ needs.build.result }}
-          docker-result: ${{ needs.docker.result }}
+          docker-build-result: ${{ needs.docker-build.result }}
+          docker-publish-result: ${{ needs.docker-publish.result }}
           github-event-name: ${{ github.event_name }}
           github-event-number: ${{ github.event.number }}
           github-base-ref: ${{ github.base_ref }}

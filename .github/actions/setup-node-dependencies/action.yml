@@ -2,30 +2,10 @@ name: 'Setup'
 description: 'Setup Node.js, install dependencies, and create .env file with caching'
 
 inputs:
-  # Environment file inputs (optional - only create if provided)
-  db-port:
-    description: 'Database port'
+  create-env:
+    description: 'Whether to create .env file from environment variables'
     required: false
-  db-user:
-    description: 'Database username'
-    required: false
-  db-password:
-    description: 'Database password'
-    required: false
-  db-name:
-    description: 'Database name'
-    required: false
-  app-port:
-    description: 'Application port'
-    required: false
-  node-env:
-    description: 'Node environment'
-    required: false
-    default: 'production'
-  db-host:
-    description: 'Database host'
-    required: false
-    default: 'postgres'
+    default: 'true'
 
 outputs:
   env-cache-hit:
@@ -42,17 +22,17 @@ runs:
         cache: 'npm'
 
     - name: Generate .env cache key
-      if: inputs.db-port != '' && inputs.db-user != ''
+      if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
       id: env-cache-key
       run: |
-        # Create a hash based on configuration (not secrets values for security)
-        CONFIG_HASH=$(echo "${{ inputs.db-host }}-${{ inputs.db-port }}-${{ inputs.node-env }}-${{ inputs.app-port }}" | sha256sum | cut -d' ' -f1)
+        # Create a hash based on NON-SECRET configuration only for security
+        CONFIG_HASH=$(echo "${DB_HOST}-${NODE_ENV}" | sha256sum | cut -d' ' -f1)
         echo "config-hash=${CONFIG_HASH}" >> $GITHUB_OUTPUT
         echo "Generated .env cache key: ${CONFIG_HASH}"
       shell: bash
 
     - name: Restore .env cache
-      if: inputs.db-port != '' && inputs.db-user != ''
+      if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
       id: cache-env
       uses: actions/cache@v4
       with:
@@ -71,25 +51,23 @@ runs:
           ${{ runner.os }}-node-modules-
 
     - name: Create .env file (if needed and cache miss)
-      if: inputs.db-port != '' && inputs.db-user != '' && steps.cache-env.outputs.cache-hit != 'true'
+      if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != '' && steps.cache-env.outputs.cache-hit != 'true'
       run: |
         cat > .env << EOF
         # Database Configuration
-        DB_HOST=${{ inputs.db-host }}
-        DB_PORT=${{ inputs.db-port }}
-        DB_USER=${{ inputs.db-user }}
-        DB_PASSWORD=${{ inputs.db-password }}
-        DB_NAME=${{ inputs.db-name }}
+        DB_HOST=${DB_HOST}
+        DB_PORT=${DB_PORT}
+        DB_USER=${DB_USER}
+        DB_PASSWORD=${DB_PASSWORD}
+        DB_NAME=${DB_NAME}
 
         # Application Configuration
-        PORT=${{ inputs.app-port }}
-        NODE_ENV=${{ inputs.node-env }}
+        PORT=${APP_PORT}
+        NODE_ENV=${NODE_ENV}
         EOF
-        echo "   Created .env file with configuration"
-        echo "   • DB_HOST: ${{ inputs.db-host }}"
-        echo "   • DB_PORT: ${{ inputs.db-port }}"
-        echo "   • PORT: ${{ inputs.app-port }}"
-        echo "   • NODE_ENV: ${{ inputs.node-env }}"
+        echo "Created .env file with configuration"
+        echo "• NODE_ENV: ${NODE_ENV}"
+        echo "• Configuration loaded securely"
       shell: bash
 
     - name: Install dependencies (if cache miss)
@@ -110,14 +88,18 @@ runs:
         fi
 
         # Environment file status
-        if [[ "${{ inputs.db-port }}" != "" && "${{ inputs.db-user }}" != "" ]]; then
-          if [[ "${{ steps.cache-env.outputs.cache-hit }}" == "true" ]]; then
-            echo ".env file: Restored from cache"
+        if [[ "${{ inputs.create-env }}" == "true" ]]; then
+          if [[ "${{ env.DB_PORT }}" != "" && "${{ env.DB_USER }}" != "" ]]; then
+            if [[ "${{ steps.cache-env.outputs.cache-hit }}" == "true" ]]; then
+              echo "🔧 .env file: Restored from cache"
+            else
+              echo "🔧 .env file: Created and cached"
+            fi
           else
-            echo ".env file: Created and cached"
+            echo "⚠️ .env file: Skipped (missing environment variables)"
           fi
         else
-          echo ".env file: Skipped (no environment inputs provided)"
+          echo "🔧 .env file: Skipped (create-env=false)"
         fi
 
         echo ""
