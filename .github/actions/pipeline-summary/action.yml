@@ -14,11 +14,11 @@ inputs:
   security-result:
     description: 'Result of security job'
     required: true
-  build-result:
-    description: 'Result of build job'
+  docker-build-result:
+    description: 'Result of docker-build job'
     required: true
-  docker-result:
-    description: 'Result of docker job'
+  docker-publish-result:
+    description: 'Result of docker-publish job'
     required: false
     default: 'skipped'
   github-event-name:
@@ -76,20 +76,20 @@ runs:
         echo "|  Linting | ${{ inputs.linting-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
         echo "|  Testing | ${{ inputs.test-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
         echo "|  Security| ${{ inputs.security-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "|  Build | ${{ inputs.build-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "|  Docker Build | ${{ inputs.docker-build-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
 
-        # Add Docker row only if it ran
-        if [[ "${{ inputs.docker-result }}" != "skipped" ]]; then
-          echo "|  Docker Publish | ${{ inputs.docker-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        # Add Docker Publish row only if it ran
+        if [[ "${{ inputs.docker-publish-result }}" != "skipped" ]]; then
+          echo "|  Docker Publish | ${{ inputs.docker-publish-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
 
         echo "###  Overall Status" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
 
-        # Check if core stages passed (Docker is optional)
+        # Check if core stages passed (Docker Publish is optional)
         CORE_SUCCESS=true
-        if [[ "${{ inputs.install-dependencies-result }}" != "success" || "${{ inputs.linting-result }}" != "success" || "${{ inputs.test-result }}" != "success" || "${{ inputs.security-result }}" != "success" || "${{ inputs.build-result }}" != "success" ]]; then
+        if [[ "${{ inputs.install-dependencies-result }}" != "success" || "${{ inputs.linting-result }}" != "success" || "${{ inputs.test-result }}" != "success" || "${{ inputs.security-result }}" != "success" || "${{ inputs.docker-build-result }}" != "success" ]]; then
           CORE_SUCCESS=false
         fi
 
@@ -100,11 +100,11 @@ runs:
             echo "Branch ${{ inputs.github-ref-name }} is healthy ✅" >> $GITHUB_STEP_SUMMARY
             
             # Add Docker status for post-merge
-            if [[ "${{ inputs.docker-result }}" == "success" ]]; then
+            if [[ "${{ inputs.docker-publish-result }}" == "success" ]]; then
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "🐳 **Docker Image Published Successfully**" >> $GITHUB_STEP_SUMMARY
               echo "Pull the latest image: \`docker pull your-username/f1-world-champions-api:${{ inputs.github-ref-name }}\`" >> $GITHUB_STEP_SUMMARY
-            elif [[ "${{ inputs.docker-result }}" == "failure" ]]; then
+            elif [[ "${{ inputs.docker-publish-result }}" == "failure" ]]; then
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "⚠️ **Docker Publish Failed** - Check logs for details" >> $GITHUB_STEP_SUMMARY
             fi
