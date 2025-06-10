@@ -139,12 +139,10 @@ jobs:
         with:
           images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
           tags: |
-            # Branch names (sanitized)
-            type=ref,event=branch
             # PR numbers
             type=ref,event=pr,prefix=pr-
             # Git commit SHA with branch prefix (only for branches)
-            type=sha,prefix={{branch}}-,enable={{is_default_branch}}
+            type=sha,prefix=main-,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,prefix=develop-,enable=${{ github.ref == 'refs/heads/develop' }}
             # Named tags for specific branches
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
@@ -207,8 +205,6 @@ jobs:
         with:
           images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
           tags: |
-            # Branch names (sanitized)
-            type=ref,event=branch
             # Semantic versioning tags
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
