@@ -8,7 +8,7 @@ import { Race } from './entities/race.entity';
 import { Season } from './entities/season.entity';
 
 config({
-  path: ['.env.local', '.env'],
+  path: ['.env'],
 });
 
 const configService = new ConfigService();
@@ -22,5 +22,5 @@ export default new DataSource({
   database: configService.getOrThrow('DB_NAME'),
   entities: [Season, Driver, Race, Constructor],
   synchronize: false,
-  migrations: ['src/database/migrations/**/*.ts'],
+  migrations: ['dist/database/migrations/**/*.js'],
 });

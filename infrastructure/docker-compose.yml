@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: f1-postgres
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_INITDB_ARGS: '--encoding=UTF-8'
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - f1-network
+    # SECURITY: Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          memory: 256M
+    # SECURITY: No root capabilities
+    security_opt:
+      - no-new-privileges:true
+
+  # F1 World Champions API
+  world-champions-api:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+      args:
+        PORT: ${PORT}
+    container_name: world-champions-api
+    restart: unless-stopped
+    env_file: ../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: ${PORT:-3000}
+      NODE_ENV: ${NODE_ENV:-development}
+      #  db config
+      DB_HOST: postgres # Hardcoded since it's always the service name in Docker
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    ports:
+      - '${PORT}:${PORT}'
+
+    networks:
+      - f1-network
+    # SECURITY: Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          memory: 512M
+    #  SECURITY: Enhanced security
+    security_opt:
+      - no-new-privileges:true
+    read_only: true #  Read-only filesystem
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100M
+
+  # pgAdmin (Development/Tools only)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: f1-pgadmin
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - '${PGADMIN_PORT}:80'
+    depends_on:
+      - postgres
+    networks:
+      - f1-network
+    profiles:
+      - tools # Only runs when explicitly enabled
+    #  SECURITY: Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+# Networks
+networks:
+  f1-network:
+    driver: bridge
+    # SECURITY: Network isolation
+    driver_opts:
+      com.docker.network.bridge.name: f1-br0
+
+# Volumes
+volumes:
+  postgres_data:
+    driver: local

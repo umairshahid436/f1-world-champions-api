@@ -10,50 +10,10 @@ This API serves as the backend for SPA/Mobile applications displaying F1 World C
 
 - **Season Champions**: Get F1 World Champions by year range
 - **Race Results**: Fetch race winners for specific seasons
-- ⚡ **Performance Optimized**: Database indexes for sub-millisecond queries
+- **Performance Optimized**: Database indexes for sub-millisecond queries
 - **Cache-Aside Pattern**: Database-first with Ergast API fallback
 - **Docker Ready**: Complete containerized setup
 - **Data Integrity**: Foreign key relationships and constraints
-
-## **Architecture Diagram**
-
-```mermaid
-graph TB
-    Client[📱 Client App<br/>SPA/Mobile] --> API[F1 Champions API<br/>NestJS + TypeScript]
-
-    API --> Cache{Data in DB?}
-    Cache -->|Yes| DB[(PostgreSQL<br/>Cache)]
-    Cache -->|No| External[Ergast F1 API<br/>External Source]
-
-    External --> Transform[Data Transformation<br/>& Validation]
-    Transform --> Save[Save to Database]
-    Save --> DB
-
-    subgraph "Database Schema"
-        DB --> Seasons[Seasons<br/>year, championDriverId, championConstructorId]
-        DB --> Drivers[Drivers<br/>driverId, name, nationality]
-        DB --> Constructors[Constructors<br/>constructorId, name, nationality]
-        DB --> Races[Races<br/>seasonYear, driverId, circuitName]
-    end
-
-    subgraph "Performance Optimizations"
-        Indexes[Database Indexes<br/>• seasonYear (races)<br/>• driverId (races)<br/>• Primary Keys]
-        Constraints[Foreign Key Constraints<br/>• races → seasons<br/>• races → drivers<br/>• seasons → drivers/constructors]
-    end
-
-    DB -.-> Indexes
-    DB -.-> Constraints
-
-    classDef api fill:#e1f5fe
-    classDef db fill:#f3e5f5
-    classDef external fill:#fff3e0
-    classDef perf fill:#e8f5e8
-
-    class API api
-    class DB,Seasons,Drivers,Constructors,Races db
-    class External external
-    class Indexes,Constraints perf
-```
 
 ## **Tech Stack**
 
@@ -167,8 +127,8 @@ GET /api/races/season/2023
 2. **Setup environment**
 
    ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your database credentials
+   cp .env
+   # Edit .env with required variables
    ```
 
 3. **Start PostgreSQL**
@@ -209,90 +169,42 @@ constructors (constructorId) ← seasons (championConstructorId)
 | `drivers`      | `driverId`      | Driver data retrieval           |
 | `constructors` | `constructorId` | Constructor data retrieval      |
 
-## ⚡ **Performance Features**
-
-### **Cache-Aside Pattern**
-
-```typescript
-// 1. Check database first
-const dataFromDB = await repository.findByYear(year);
-if (dataFromDB.length > 0) return dataFromDB;
-
-// 2. Fetch from external API if missing
-const dataFromAPI = await ergastService.fetchData(year);
-
-// 3. Save to database for future requests
-await repository.save(transformedData);
-```
-
 ### **Query Optimization**
 
 - **Database indexes** on frequently queried columns
 - **Foreign key constraints** for data integrity
-- **Batched operations** for bulk data processing
-- **Chunked processing** (1000 records per chunk)
 
 ## **Docker Commands**
-
-### **Management**
-
-```bash
-# Start services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-
-# Reset database
-docker-compose down -v && docker-compose up -d
-
-# Run migrations
-docker-compose exec f1-api npm run migration:run
-```
-
-### **Development**
-
-```bash
-# Build fresh image
-docker-compose build --no-cache
-
-# Access container shell
-docker-compose exec f1-api sh
-
-# View database
-docker-compose exec postgres psql -U f1_user -d f1_champions
-```
 
 ## **Data Flow**
 
 1. **Client Request** → API endpoint
-2. **Database Check** → Query local cache
-3. **Cache Miss** → Fetch from Ergast API
+2. **Database Check** → Query database
+3. **DB Miss** → Fetch from Ergast API
 4. **Data Processing** → Transform & validate
 5. **Database Save** → Store for future requests
-6. **Response** → Return formatted data
+6. **Response** → Return data
 
 ## **Environment Variables**
 
 ```bash
-# Database Configuration
-DB_HOST=
-DB_PORT=
-DB_USER=
-DB_PASSWORD=
-DB_NAME=
+# app confg
+NODE_ENV=***
+PORT=***
 
-# Application
-NODE_ENV=production
-PORT=3000
+# docker config
+BUILD_TARGET=***
+VOLUME_MODE=***
+
+# DB config
+DB_HOST=***
+DB_PORT=***
+DB_USER=***
+DB_PASSWORD=***
+DB_NAME=***
+
+# pgAdmin confg
+PGADMIN_EMAIL=***
+PGADMIN_PASSWORD=***
+PGADMIN_PORT=***
 ```
-
-## **Monitoring & Health**
-
-- **Health Checks**: Container health monitoring
-- **Logging**: Structured logging with context
-- **Error Handling**: Graceful error responses
-- **Database Monitoring**: Connection health checks

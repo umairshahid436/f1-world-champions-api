@@ -1,4 +1,11 @@
-import { Module, ValidationPipe, BadRequestException } from '@nestjs/common';
+import {
+  Module,
+  ValidationPipe,
+  BadRequestException,
+  OnApplicationBootstrap,
+  Logger,
+} from '@nestjs/common';
+
 import { SeasonsModule } from './seasons/seasons.module';
 import { RacesModule } from './races/races.module';
 import { APP_PIPE, APP_INTERCEPTOR } from '@nestjs/core';
@@ -9,6 +16,7 @@ import { DriversModule } from './drivers/drivers.module';
 import { ConstructorsModule } from './constructors/constructors.module';
 import { DatabaseModule } from '../database/database.module';
 import { HealthModule } from './health/health.module';
+import { DataSource } from 'typeorm';
 
 @Module({
   imports: [
@@ -43,4 +51,29 @@ import { HealthModule } from './health/health.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements OnApplicationBootstrap {
+  private readonly logger = new Logger(AppModule.name);
+
+  constructor(private dataSource: DataSource) {}
+
+  async onApplicationBootstrap() {
+    try {
+      this.logger.log('Running database migrations...');
+      const migrations = await this.dataSource.runMigrations();
+
+      if (migrations.length > 0) {
+        this.logger.log(
+          `Successfully executed ${migrations.length} migration(s):`,
+        );
+        migrations.forEach((migration) => {
+          this.logger.log(`  - ${migration.name}`);
+        });
+      } else {
+        this.logger.log('Database is up to date - no migrations to run');
+      }
+    } catch (err) {
+      this.logger.error('Failed to run migrations', err);
+      throw err;
+    }
+  }
+}
