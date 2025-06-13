@@ -44,6 +44,7 @@ jobs:
     permissions:
       actions: read
       contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -84,12 +85,6 @@ jobs:
           else
             echo "❌ package-lock.json not found"
           fi
-
-      - name: Verify ESLint installation
-        run: |
-          ls -la node_modules/.bin/eslint
-          chmod +x node_modules/.bin/eslint
-          which eslint || echo "ESLint not in PATH"
 
       - name: Run ESLint
         run: npm run lint
