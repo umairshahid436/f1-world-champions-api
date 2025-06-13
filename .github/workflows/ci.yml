@@ -1,15 +1,16 @@
 name: CI Pipeline
+
 permissions:
   contents: read
-  security-events: write
-  actions: read
-  checks: write
+
 on:
   pull_request:
     branches: [main, develop]
     types: [opened, synchronize, reopened]
   push:
     branches: [main, develop]
+
+# Define once, use selectively
 env:
   # Database Configuration
   DB_HOST: postgres
@@ -22,9 +23,11 @@ env:
   NODE_ENV: production
 
 jobs:
+  # Stage 1: Install Dependencies (and populate cache)
   install-dependencies:
     name: Install Dependencies
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,39 +36,46 @@ jobs:
         with:
           create-env: 'false'
 
+  # Stage 2: Linting
   linting:
     name: Linting
     runs-on: ubuntu-latest
     needs: install-dependencies
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Setup and Restore Dependencies from Cache
         uses: ./.github/actions/setup-node-dependencies
         with:
           create-env: 'false'
-      - name: Verify Cache Status
-        run: |
-          echo "Cache Status: ${{ steps.setup-node.outputs.cache-hit }}"
-          echo "Dependencies in node_modules:"
-          ls node_modules/eslint
+
       - name: Run ESLint
         run: npm run lint
 
+  # Stage 3: Testing
   test:
     name: Tests
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      checks: write
     needs: install-dependencies
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Setup and Restore Dependencies from Cache
         uses: ./.github/actions/setup-node-dependencies
         with:
           create-env: 'false'
+
       - name: Run tests
         run: npm run test:cov
 
+  # Stage 4: Security
   security:
     name: Security
     runs-on: ubuntu-latest
@@ -74,25 +84,30 @@ jobs:
       security-events: write
       actions: read
       contents: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Setup and Restore Dependencies from Cache
         uses: ./.github/actions/setup-node-dependencies
         with:
           create-env: 'false'
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
           queries: security-extended,security-and-quality
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           category: '/language:javascript-typescript'
           upload: true
+
       - name: Check Dependencies Security
         run: |
           echo "Checking dependencies for security vulnerabilities..."
@@ -104,17 +119,22 @@ jobs:
             exit 1
           fi
 
+  # Stage 5: Docker Build
   docker-build:
     name: Build
     runs-on: ubuntu-latest
     needs: [linting, test, security]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Setup
         uses: ./.github/actions/setup-node-dependencies
+
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@v3
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -131,6 +151,7 @@ jobs:
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             # Latest tag for main branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
@@ -143,6 +164,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=docker,dest=/tmp/f1-api-image.tar
+
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
         with:
@@ -150,14 +172,18 @@ jobs:
           path: /tmp/f1-api-image.tar
           retention-days: 1
 
+  # Stage 6: Docker Publish
   docker-publish:
     name: Docker Publish
     runs-on: ubuntu-latest
     needs: [docker-build]
+    # Only run when PR is successfully merged into main/develop or on version tags
     if: success() && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
+
     steps:
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@v3
+
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
@@ -167,12 +193,14 @@ jobs:
         run: |
           docker load --input /tmp/f1-api-image.tar
           docker image ls -a
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -188,10 +216,12 @@ jobs:
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             # Latest tag for main branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
       - name: Push Docker image
         run: |
           # Get the image ID from the loaded image
           IMAGE_ID=$(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep "${{ github.event.repository.name }}" | head -1 | awk '{print $2}')
+
           # Tag and push each tag from metadata
           echo '${{ steps.meta.outputs.tags }}' | tr ',' '\n' | while read -r tag; do
             if [ ! -z "$tag" ]; then
@@ -200,15 +230,14 @@ jobs:
               docker push $tag
             fi
           done
-          # Clean up
-          docker rmi $IMAGE_ID
-          docker rmi $(docker images --filter=reference="${{ github.event.repository.name }}:*" -q)
 
+  # Stage 7: Summary
   pipeline-summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
     needs: [linting, test, security, docker-build, docker-publish]
     if: always()
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
