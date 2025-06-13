@@ -7,6 +7,8 @@ import { DriversService } from '@modules/drivers/drivers.service';
 import { ConstructorsService } from '@modules/constructors/constructors.service';
 import { Repository, EntityManager, Between } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { sortByProperty } from '@utils/utils';
+import { SortBy } from '@interfaces/index';
 
 @Injectable()
 export class SeasonsService {
@@ -26,10 +28,16 @@ export class SeasonsService {
    * Main method: Get seasons data
    * Check DB first, fetch from API if missing
    */
-  async getSeasonsChampions(
-    fromYear: number,
-    toYear: number,
-  ): Promise<Season[]> {
+
+  async getSeasonsChampions({
+    fromYear,
+    toYear,
+    sortBy = 'DESC',
+  }: {
+    fromYear: number;
+    toYear: number;
+    sortBy?: SortBy;
+  }): Promise<Season[]> {
     this.logger.log(`Requesting seasons ${fromYear}-${toYear}`);
     try {
       // Check if data exists in database
@@ -49,14 +57,19 @@ export class SeasonsService {
       );
       this.logger.log(`Fetching data from External API (ergast)`);
 
-      const seasonsFromApi = await this.ergastService.fetchSeasonChampions(
+      const seasonsFromApi = await this.ergastService.fetchSeasonChampions({
         fromYear,
         toYear,
-      );
+        positionToFilterResults: 1,
+      });
 
       if (seasonsFromApi.length > 0) {
         const savedSeasons = await this.saveSeasons(seasonsFromApi);
-        return savedSeasons.sort((a, b) => b.year - a.year);
+        return sortByProperty({
+          array: savedSeasons,
+          property: 'year',
+          sortBy: sortBy,
+        });
       }
 
       return [];
@@ -102,6 +115,10 @@ export class SeasonsService {
       const { drivers, constructors, seasons } = transformedData;
 
       await this.entityManager.transaction(async (manager) => {
+        // how it work entity manager transaction
+        // why manager, why not repo
+        // how explicity commit and rollback
+        // how unit of work pattern work in typeorm
         await this.driversService.upsertDriversWithTransaction(
           drivers,
           manager,

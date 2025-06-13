@@ -1,4 +1,4 @@
-interface Driver {
+export interface ErgastDriver {
   driverId: string;
   permanentNumber?: string;
   code: string;
@@ -8,13 +8,15 @@ interface Driver {
   nationality: string;
   dateOfBirth?: string;
 }
-interface Constructor {
+
+export interface ErgastConstructor {
   constructorId: string;
   url: string;
   name: string;
   nationality: string;
 }
-interface Circuit {
+
+export interface ErgastCircuit {
   circuitId: string;
   url: string;
   circuitName: string;
@@ -25,6 +27,13 @@ interface Circuit {
     country: string;
   };
 }
+
+export interface ErgastStandingList {
+  season: string;
+  round: string;
+  DriverStandings: ErgastDriverStanding[];
+}
+
 export interface ErgastDriverStandingsResponse {
   MRData: {
     xmlns: string;
@@ -35,20 +44,10 @@ export interface ErgastDriverStandingsResponse {
     total: string;
     StandingsTable: {
       season: string;
-      StandingsLists: Array<{
-        season: string;
-        round: string;
-        DriverStandings: ErgastDriverStanding[];
-      }>;
+      round: string;
+      StandingsLists: ErgastStandingList[];
     };
   };
-}
-
-export interface SeasonChampionResult {
-  champions: ErgastDriverStanding[];
-  failedYears: number[];
-  totalRequested: number;
-  successfullyFetched: number;
 }
 
 export interface ErgastDriverStanding {
@@ -58,8 +57,8 @@ export interface ErgastDriverStanding {
   positionText: string;
   points: string;
   wins: string;
-  Driver: Driver;
-  Constructors: Array<Constructor>;
+  Driver: ErgastDriver;
+  Constructors: ErgastConstructor[];
 }
 
 export interface ErgastRaceResultsResponse {
@@ -82,7 +81,7 @@ export interface ErgastRace {
   round: string;
   url: string;
   raceName: string;
-  Circuit: Circuit;
+  Circuit: ErgastCircuit;
   date: string;
   time?: string;
   Results: ErgastRaceResult[];
@@ -93,8 +92,8 @@ export interface ErgastRaceResult {
   position: string;
   positionText: string;
   points: string;
-  Driver: Driver;
-  Constructor: Constructor;
+  Driver: ErgastDriver;
+  Constructor: ErgastConstructor;
   grid: string;
   laps: string;
   status: string;
