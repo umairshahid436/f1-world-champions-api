@@ -26,7 +26,7 @@ export class RacesService {
     this.logger.log(`Requesting races for season ${year}`);
     try {
       // Check if data exists in database
-      const racesFromDB = await this.findBySeasonYear(year);
+      const racesFromDB = await this.findByRacesBySeasonId(year);
       if (racesFromDB.length > 0) {
         this.logger.log(`Race data found in database for ${year}`);
         return racesFromDB;
@@ -36,7 +36,10 @@ export class RacesService {
       this.logger.log(`Race data not found in database for ${year}`);
       this.logger.log(`Fetching race data from External API (ergast)`);
 
-      const ergastRaces = await this.ergastService.fetchSeasonRaces(year);
+      const ergastRaces = await this.ergastService.fetchSeasonRaces({
+        year,
+        positionToFilterResult: 1,
+      });
       this.logger.log(`Race data fetched from External API (ergast)`);
 
       if (ergastRaces.length > 0) {
@@ -56,7 +59,9 @@ export class RacesService {
     }
   }
 
-  private async findBySeasonYear(year: number): Promise<Race[]> {
+  // in actual getting by season id
+  // confusion is year is treated as PK/FK
+  private async findByRacesBySeasonId(year: number): Promise<Race[]> {
     return this.raceRepository.find({
       where: {
         seasonYear: year,
