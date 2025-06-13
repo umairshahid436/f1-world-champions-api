@@ -49,43 +49,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup and Restore Dependencies from Cache
-        uses: ./.github/actions/setup-node-dependencies
-        with:
-          create-env: false
-
-      - name: Debug - Check if node_modules exists
+      - name: Debug - Before install
         run: |
-          echo "Current directory:"
-          pwd
-          echo "Directory contents:"
-          ls -la
-          echo "Checking node_modules:"
-          if [ -d "node_modules" ]; then
-            echo "✅ node_modules directory exists"
-            echo "node_modules size:"
-            du -sh node_modules
-            echo "node_modules/.bin contents:"
-            ls -la node_modules/.bin/ | head -20
-          else
-            echo "❌ node_modules directory does not exist"
-          fi
+          echo "=== Before npm ci ==="
+          node --version
+          npm --version
+          echo "ESLint in package.json:"
+          grep -i eslint package.json
 
-      - name: Debug - Check package.json and package-lock.json
+      - name: Install dependencies
         run: |
-          echo "=== package.json content ==="
-          if [ -f "package.json" ]; then
-            cat package.json
-          else
-            echo "❌ package.json not found"
-          fi
-          echo "=== package-lock.json exists? ==="
-          if [ -f "package-lock.json" ]; then
-            echo "✅ package-lock.json exists"
-          else
-            echo "❌ package-lock.json not found"
-          fi
+          echo "=== Running npm ci ==="
+          npm ci --verbose
 
+      - name: Debug - After install
+        run: |
+          echo "=== After npm ci ==="
+          echo "node_modules/.bin contents:"
+          ls -la node_modules/.bin/ | head -20
+          echo "Search for eslint:"
+          find node_modules -name "*eslint*" -type f | head -10
+          echo "npm list eslint:"
+          npm list eslint || echo "ESLint not in npm list"
+          echo "Try npx eslint --version:"
+          npx eslint --version || echo "npx eslint failed"
       - name: Run ESLint
         run: npm run lint
 
