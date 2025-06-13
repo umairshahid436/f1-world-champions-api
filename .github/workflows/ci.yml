@@ -50,9 +50,12 @@ jobs:
         uses: ./.github/actions/setup-node-dependencies
         with:
           create-env: 'false'
-      - name: Install dependencies
-        run: npm ci
-        shell: bash
+      - name: Debug Dependencies
+        run: |
+          echo "Package.json contents:"
+          cat package.json
+          echo "\nNode modules directory contents:"
+          ls -la node_modules
 
       - name: Run ESLint
         run: npm run lint
