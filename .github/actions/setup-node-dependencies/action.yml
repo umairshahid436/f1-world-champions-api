@@ -1,11 +1,16 @@
 name: 'Setup'
-description: 'Setup Node.js, install dependencies, and create .env file'
+description: 'Setup Node.js, install dependencies, and create .env file with caching'
 
 inputs:
   create-env:
     description: 'Whether to create .env file from environment variables'
     required: false
     default: 'true'
+
+outputs:
+  env-cache-hit:
+    description: 'Whether the .env file was restored from cache'
+    value: ${{ steps.cache-env.outputs.cache-hit }}
 
 runs:
   using: 'composite'
@@ -14,8 +19,38 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
+        cache: 'npm'
 
-    - name: Create .env file
+    - name: Generate .env cache key
+      if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
+      id: env-cache-key
+      run: |
+        # Create a hash based on NON-SECRET configuration only for security
+        CONFIG_HASH=$(echo "${DB_HOST}-${NODE_ENV}" | sha256sum | cut -d' ' -f1)
+        echo "config-hash=${CONFIG_HASH}" >> $GITHUB_OUTPUT
+        echo "Generated .env cache key: ${CONFIG_HASH}"
+      shell: bash
+
+    - name: Restore .env cache
+      if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
+      id: cache-env
+      uses: actions/cache@v4
+      with:
+        path: .env
+        key: ${{ runner.os }}-env-file-${{ steps.env-cache-key.outputs.config-hash }}
+        restore-keys: |
+          ${{ runner.os }}-env-file-
+
+    - name: Restore node_modules cache
+      id: cache-nodemodules
+      uses: actions/cache@v4
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-modules-
+
+    - name: Create .env file (if needed and cache miss)
       if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != '' && steps.cache-env.outputs.cache-hit != 'true'
       run: |
         cat > .env << EOF
@@ -25,6 +60,7 @@ runs:
         DB_USER=${DB_USER}
         DB_PASSWORD=${DB_PASSWORD}
         DB_NAME=${DB_NAME}
+
         # Application Configuration
         PORT=${APP_PORT}
         NODE_ENV=${NODE_ENV}
@@ -34,7 +70,8 @@ runs:
         echo "• Configuration loaded securely"
       shell: bash
 
-    - name: Install dependencies
+    - name: Install dependencies (if cache miss)
+      if: steps.cache-nodemodules.outputs.cache-hit != 'true'
       run: npm ci
       shell: bash
 
@@ -42,7 +79,14 @@ runs:
       run: |
         echo "Setup Summary:"
         echo ""
-        echo "Dependencies: Freshly installed"
+
+        # Dependencies status
+        if [[ "${{ steps.cache-nodemodules.outputs.cache-hit }}" == "true" ]]; then
+          echo "Dependencies: Restored from cache"
+        else
+          echo "Dependencies: Installed and cached"
+        fi
+
         # Environment file status
         if [[ "${{ inputs.create-env }}" == "true" ]]; then
           if [[ "${{ env.DB_PORT }}" != "" && "${{ env.DB_USER }}" != "" ]]; then
@@ -57,6 +101,7 @@ runs:
         else
           echo ".env file: Skipped (create-env=false)"
         fi
+
         echo ""
         echo "Node.js version: $(node --version)"
         echo "npm version: $(npm --version)"
