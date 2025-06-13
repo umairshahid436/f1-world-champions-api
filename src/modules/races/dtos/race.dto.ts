@@ -1,4 +1,4 @@
-import { Race } from '@src/database/entities/race.entity';
+import { Race } from '../../../database/entities/race.entity';
 import { Expose, Transform, Type } from 'class-transformer';
 
 class WinnerDriverDto {

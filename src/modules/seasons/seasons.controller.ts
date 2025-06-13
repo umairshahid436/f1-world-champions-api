@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { SeasonsService } from './services/seasons.service';
-import { Serialize } from '@decorators/serialize.decorator';
-import { SeasonDto } from './dtos/season-dto';
+import { Serialize } from '../../decorators/serialize.decorator';
+import { SeasonDto } from './dtos/season.dto';
 import { SeasonQueryDto } from './dtos/season-query.dto';
 import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 
@@ -22,7 +22,6 @@ export class SeasonsController {
       'List of season champions with driver and constructor information',
   })
   getSeasonsChampions(@Query() query: SeasonQueryDto) {
-    const { fromYear, toYear } = query;
-    return this.seasonsService.getSeasonsChampions({ fromYear, toYear });
+    return this.seasonsService.getSeasonsChampions(query);
   }
 }

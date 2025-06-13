@@ -1,14 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ErgastService } from '@modules/external/ergast/ergast.service';
+import { ErgastService } from '../../external/ergast/ergast.service';
 import { DataTransformationService } from './data-transformation.service';
-import { Season } from '@src/database/entities/season.entity';
-import { ErgastDriverStanding } from '@modules/external/ergast/ergast.interface';
-import { DriversService } from '@modules/drivers/drivers.service';
-import { ConstructorsService } from '@modules/constructors/constructors.service';
+import { Season } from '../../../database/entities/season.entity';
+import { ErgastDriverStanding } from '../../external/ergast/ergast.interface';
+import { DriversService } from '../../drivers/drivers.service';
+import { ConstructorsService } from '../../constructors/constructors.service';
 import { Repository, EntityManager, Between } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { sortByProperty } from '@utils/utils';
-import { SortBy } from '@interfaces/index';
+import { sortByProperty } from '../../../utils/utils';
+import { SortBy } from '../../../interfaces/api.interface';
 
 @Injectable()
 export class SeasonsService {

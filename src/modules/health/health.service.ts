@@ -1,6 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 
 export interface HealthStatus {
   status: 'ok' | 'error';
@@ -11,13 +9,7 @@ export interface HealthStatus {
 
 @Injectable()
 export class HealthService {
-  private readonly logger = new Logger(HealthService.name);
   private readonly startTime = Date.now();
-
-  constructor(
-    @InjectDataSource()
-    private readonly dataSource: DataSource,
-  ) {}
 
   getHealthStatus(): HealthStatus {
     return {

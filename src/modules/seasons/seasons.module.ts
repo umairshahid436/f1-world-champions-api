@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { SeasonsController } from './seasons.controller';
 import { SeasonsService } from './services/seasons.service';
-import { ErgastModule } from '@modules/external/ergast/ergast.module';
+import { ErgastModule } from '../external/ergast/ergast.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Season } from '@src/database/entities/season.entity';
-import { Driver } from '@src/database/entities/driver.entity';
-import { Constructor } from '@src/database/entities/constructor.entity';
+import { Season } from '../../database/entities/season.entity';
+import { Driver } from '../../database/entities/driver.entity';
+import { Constructor } from '../../database/entities/constructor.entity';
 import { DataTransformationService } from './services/data-transformation.service';
-import { DriversModule } from '@modules/drivers/drivers.module';
-import { ConstructorsModule } from '@modules/constructors/constructors.module';
+import { DriversModule } from '../drivers/drivers.module';
+import { ConstructorsModule } from '../constructors/constructors.module';
 
 @Module({
   imports: [
