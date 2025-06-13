@@ -1,5 +1,5 @@
 import { Expose, Transform, Type } from 'class-transformer';
-import { Season } from '@src/database/entities/season.entity';
+import { Season } from '../../../database/entities/season.entity';
 
 export class ChampionDriverDto {
   @Expose()
@@ -10,7 +10,7 @@ export class ChampionDriverDto {
 }
 export class ChampionConstructorDto {
   @Expose()
-  id!: string;
+  constructorId!: string;
 
   @Expose()
   name!: string;

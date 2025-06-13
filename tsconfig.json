@@ -10,16 +10,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "paths": {
-      "@entities/*": ["src/database/entities/*"],
-      "@modules/*": ["src/modules/*"],
-      "@utils/*": ["src/utils/*"],
-      "@decorators/*": ["src/decorators/*"],
-      "@interceptors/*": ["src/interceptors/*"],
-      "@interfaces/*": ["src/interfaces/*"],
-      "@config/*": ["src/config/*"],
-      "@src/*": ["src/*"]
-    },
+
     "incremental": true,
     "skipLibCheck": true,
     "strict": true,

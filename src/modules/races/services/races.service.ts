@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ErgastService } from '@modules/external/ergast/ergast.service';
+import { ErgastService } from '../../external/ergast/ergast.service';
 import { RaceDataTransformationService } from './data-transformation.service';
-import { ErgastRace } from '@modules/external/ergast/ergast.interface';
-import { DriversService } from '@modules/drivers/drivers.service';
+import { ErgastRace } from '../../external/ergast/ergast.interface';
+import { DriversService } from '../../drivers/drivers.service';
 import { EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Race } from '@src/database/entities/race.entity';
-import { SeasonsService } from '@modules/seasons/services/seasons.service';
+import { Race } from '../../../database/entities/race.entity';
+import { SeasonsService } from '../../seasons/services/seasons.service';
 
 @Injectable()
 export class RacesService {

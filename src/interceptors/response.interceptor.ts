@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ApiResponse } from '@interfaces/api-response.interface';
+import { ApiResponse } from '../interfaces/api.interface';
 
 @Injectable()
 export class ResponseInterceptor<T>
@@ -17,9 +17,8 @@ export class ResponseInterceptor<T>
     next: CallHandler,
   ): Observable<ApiResponse<T>> {
     return next.handle().pipe(
-      map((data) => {
+      map((data: T) => {
         const response: ApiResponse<T> = {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           data,
           message: 'Success',
         };

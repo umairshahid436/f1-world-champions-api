@@ -97,10 +97,13 @@
     "collectCoverage": true,
     "coveragePathIgnorePatterns": [
       "/node_modules/",
+      "/src/database/*",
+      "/src/config/*",
       "\\.test\\.(js|ts)$",
       "\\.entity\\.(js|ts)$",
       "\\.module\\.(js|ts)$",
       "\\.interface\\.(js|ts)$",
+      "\\.dto\\.(js|ts)$",
       "\\.spec\\.(js|ts)$",
       "\\.d\\.ts$",
       "\\.config\\.",

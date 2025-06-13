@@ -1,5 +1,5 @@
 import { ValidationError } from 'class-validator';
-import { SortBy } from '@interfaces/index';
+import { SortBy } from '../interfaces/api.interface';
 
 /**
  * Generic sorting function that can sort arrays by any property in ascending or descending order
