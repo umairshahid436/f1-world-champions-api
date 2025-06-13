@@ -5,20 +5,25 @@ inputs:
   create-env:
     description: 'Whether to create .env file from environment variables'
     required: false
-    default: 'false'
+    default: 'true'
 
 outputs:
   env-cache-hit:
     description: 'Whether the .env file was restored from cache'
     value: ${{ steps.cache-env.outputs.cache-hit }}
+  deps-cache-hit:
+    description: 'Whether the dependencies were restored from cache'
+    value: ${{ steps.setup-node.outputs.cache-hit }}
 
 runs:
   using: 'composite'
   steps:
-    - name: 🔧 Setup Node.js 20.x
+    - name: 🔧 Setup Node.js 20.x w/ Cache
+      id: setup-node
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
+        cache: 'npm'
 
     - name: Generate .env cache key
       if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
@@ -39,15 +44,6 @@ runs:
         key: ${{ runner.os }}-env-file-${{ steps.env-cache-key.outputs.config-hash }}
         restore-keys: |
           ${{ runner.os }}-env-file-
-
-    - name: Restore node_modules cache
-      id: cache-nodemodules
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-modules-
 
     - name: Create .env file (if needed and cache miss)
       if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != '' && steps.cache-env.outputs.cache-hit != 'true'
@@ -70,7 +66,7 @@ runs:
       shell: bash
 
     - name: Install dependencies (if cache miss)
-      if: steps.cache-nodemodules.outputs.cache-hit != 'true'
+      if: steps.setup-node.outputs.cache-hit != 'true'
       run: npm ci
       shell: bash
 
@@ -80,7 +76,7 @@ runs:
         echo ""
 
         # Dependencies status
-        if [[ "${{ steps.cache-nodemodules.outputs.cache-hit }}" == "true" ]]; then
+        if [[ "${{ steps.setup-node.outputs.cache-hit }}" == "true" ]]; then
           echo "Dependencies: Restored from cache"
         else
           echo "Dependencies: Installed and cached"
