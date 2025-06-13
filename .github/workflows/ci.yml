@@ -31,16 +31,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Setup and Install Dependencies
         uses: ./.github/actions/setup-node-dependencies
-      - name: Archive node_modules
-        run: tar -czf node_modules.tar.gz node_modules
-      - name: Upload node_modules artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-modules-artifact-${{ github.run_id }}
-          path: node_modules.tar.gz
-          retention-days: 1
 
   # Stage 2: Linting
   linting:
@@ -52,18 +45,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-
-      - name: Download node_modules artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: node-modules-artifact-${{ github.run_id }}
-
-      - name: Extract node_modules
-        run: tar -xzf node_modules.tar.gz
+      - name: Setup and Install Dependencies
+        uses: ./.github/actions/setup-node-dependencies
 
       - name: Run ESLint
         run: npm run lint
@@ -81,18 +64,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-
-      - name: Download node_modules artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: node-modules-artifact-${{ github.run_id }}
-
-      - name: Extract node_modules
-        run: tar -xzf node_modules.tar.gz
+      - name: Setup and Install Dependencies
+        uses: ./.github/actions/setup-node-dependencies
 
       - name: Run tests
         run: npm run test:cov
@@ -113,18 +86,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-
-      - name: Download node_modules artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: node-modules-artifact-${{ github.run_id }}
-
-      - name: Extract node_modules
-        run: tar -xzf node_modules.tar.gz
+      - name: Setup and Install Dependencies
+        uses: ./.github/actions/setup-node-dependencies
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
