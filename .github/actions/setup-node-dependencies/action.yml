@@ -19,7 +19,6 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
-        cache: 'npm'
 
     - name: Generate .env cache key
       if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
@@ -91,15 +90,15 @@ runs:
         if [[ "${{ inputs.create-env }}" == "true" ]]; then
           if [[ "${{ env.DB_PORT }}" != "" && "${{ env.DB_USER }}" != "" ]]; then
             if [[ "${{ steps.cache-env.outputs.cache-hit }}" == "true" ]]; then
-              echo "🔧 .env file: Restored from cache"
+              echo ".env file: Restored from cache"
             else
-              echo "🔧 .env file: Created and cached"
+              echo ".env file: Created and cached"
             fi
           else
-            echo "⚠️ .env file: Skipped (missing environment variables)"
+            echo ".env file: Skipped (missing environment variables)"
           fi
         else
-          echo "🔧 .env file: Skipped (create-env=false)"
+          echo ".env file: Skipped (create-env=false)"
         fi
 
         echo ""
