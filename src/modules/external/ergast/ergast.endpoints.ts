@@ -1,9 +1,24 @@
 export class ErgastEndpoints {
-  private static readonly baseUrl = 'https://api.jolpi.ca/ergast/f1';
+  static readonly baseUrl = 'https://api.jolpi.ca/ergast/f1';
 
   /* Get race results for a specific year */
-  static results(year: number): string {
-    return `${this.baseUrl}/${year}/results.json`;
+  static results({
+    year,
+    limit,
+    offset,
+  }: {
+    year: number;
+    limit?: number;
+    offset?: number;
+  }): string {
+    let url = `${this.baseUrl}/${year}/results.json`;
+    if (limit) {
+      url += `?limit=${limit}`;
+      if (offset) {
+        url += `&offset=${offset}`;
+      }
+    }
+    return url;
   }
 
   /* Get driver standings for a specific year */
