@@ -51,11 +51,8 @@ jobs:
         with:
           create-env: 'false'
 
-      - name: Add node_modules to PATH
-        run: echo "${{ github.workspace }}/node_modules/.bin" >> $GITHUB_PATH
-
       - name: Run ESLint
-        run: npm run lint
+        run: ./node_modules/.bin/eslint "{src,apps,libs,test}/**/*.ts" --fix
 
   # Stage 3: Testing
   test:
@@ -75,11 +72,8 @@ jobs:
         with:
           create-env: 'false'
 
-      - name: Add node_modules to PATH
-        run: echo "${{ github.workspace }}/node_modules/.bin" >> $GITHUB_PATH
-
       - name: Run tests
-        run: npm run test:cov
+        run: ./node_modules/.bin/jest --coverage
 
   # Stage 4: Security
   security:
@@ -116,13 +110,12 @@ jobs:
 
       - name: Check Dependencies Security
         run: |
-          echo "Checking dependencies for security vulnerabilities..."
-          if npm audit --audit-level=moderate; then
-            echo "✅ No dependency vulnerabilities found"
-          else
+          ./node_modules/.bin/npm audit --audit-level=moderate;
+          if [ $? -ne 0 ]; then
             echo "❌ Dependency vulnerabilities detected!"
-            npm audit --audit-level=moderate
             exit 1
+          else
+            echo "✅ No dependency vulnerabilities found"
           fi
 
   # Stage 5: Docker Build
