@@ -109,7 +109,7 @@ export class ErgastService {
 
         // Add a small delay between batches to avoid overwhelming the API
         if (i + this.CONCURRENCY_LIMIT < years.length) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          await this.httpClient.delay(100);
         }
       }
 
@@ -146,7 +146,10 @@ export class ErgastService {
     year: number;
     positionToFilterResult?: number;
   }): Promise<ErgastRace[]> {
-    const url = ErgastEndpoints.results(year);
+    let allRaces: ErgastRace[] = [];
+    let offset = 0;
+    const limit = 100;
+    let total = 0;
 
     this.logger.log(
       `[Season Races] Fetching data for year ${year}${
@@ -154,38 +157,44 @@ export class ErgastService {
       }`,
     );
 
-    const response =
-      await this.httpClient.makeRequest<ErgastRaceResultsResponse>({
-        url,
-        method: 'GET',
-        context: 'F1 seasons (race results)',
-      });
+    do {
+      const url = ErgastEndpoints.results({ year, limit, offset });
 
-    const races = response?.MRData.RaceTable.Races ?? [];
-    if (races.length === 0) {
-      this.logger.warn(
-        `[Season Races] No data found for year ${year}${
-          positionToFilterResult ? ` (position ${positionToFilterResult})` : ''
-        }`,
-      );
-      return [];
-    }
+      this.logger.log(`Fetching races: offset=${offset}, limit=${limit}`);
 
-    if (positionToFilterResult) {
-      const filteredRaces = this.filterRaceResultsBasedOnPosition(
-        races,
-        positionToFilterResult,
-      );
-      this.logger.log(
-        `[Season Races] Filtered ${filteredRaces.length} races for position ${positionToFilterResult} in year ${year}`,
-      );
-      return filteredRaces;
-    }
+      const response =
+        await this.httpClient.makeRequest<ErgastRaceResultsResponse>({
+          url,
+          method: 'GET',
+          context: 'F1 seasons (race results)',
+        });
+      const races = response?.MRData?.RaceTable?.Races || [];
+      total = parseInt(response?.MRData?.total || '0');
+
+      if (positionToFilterResult) {
+        const filteredRaces = this.filterRaceResultsBasedOnPosition(
+          races,
+          positionToFilterResult,
+        );
+        this.logger.log(
+          `[Season Races] Filtered ${filteredRaces.length} races for position ${positionToFilterResult} in year ${year}`,
+        );
+        allRaces = allRaces.concat(filteredRaces);
+      } else {
+        allRaces = allRaces.concat(races);
+      }
+      offset += limit;
+
+      // Add delay between requests to respect rate limits
+      if (offset < total) {
+        await this.httpClient.delay(200);
+      }
+    } while (offset < total && total > 0);
 
     this.logger.log(
-      `[Season Races] Successfully fetched ${races.length} races for year ${year}`,
+      `[Season Races] Successfully fetched ${allRaces.length} races for year ${year}`,
     );
-    return races;
+    return allRaces;
   }
 
   private transformStandingListToDriverStanding(

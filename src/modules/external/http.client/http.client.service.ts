@@ -152,7 +152,7 @@ export class HttpClientService {
    * Delays execution for specified milliseconds
    * @param ms - Milliseconds to delay
    */
-  private delay(ms: number): Promise<void> {
+  delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
