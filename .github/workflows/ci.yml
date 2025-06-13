@@ -44,6 +44,11 @@ jobs:
         uses: ./.github/actions/setup-node-dependencies
         with:
           create-env: 'false'
+      - name: Verify Cache Status
+        run: |
+          echo "Cache Status: ${{ steps.setup-node.outputs.cache-hit }}"
+          echo "Dependencies in node_modules:"
+          ls node_modules/eslint
       - name: Run ESLint
         run: npm run lint
 
