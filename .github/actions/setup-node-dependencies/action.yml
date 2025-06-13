@@ -5,7 +5,7 @@ inputs:
   create-env:
     description: 'Whether to create .env file from environment variables'
     required: false
-    default: 'true'
+    default: 'false'
 
 outputs:
   env-cache-hit:
