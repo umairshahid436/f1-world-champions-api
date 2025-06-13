@@ -35,25 +35,15 @@ jobs:
         uses: ./.github/actions/setup-node-dependencies
         with:
           create-env: 'false'
-      - name: 'DEBUG: Verify eslint exists before archive'
-        run: ls -l node_modules/.bin/eslint
-      - name: Archive node_modules
-        run: tar -czf node_modules.tar.gz node_modules
-      - name: 'DEBUG: Verify archive creation'
-        run: ls -lh node_modules.tar.gz
-      - name: Upload node_modules artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-modules-artifact-${{ github.run_id }}
-          path: node_modules.tar.gz
-          retention-days: 1
 
   # Stage 2: Linting
   linting:
     name: Linting
     runs-on: ubuntu-latest
     needs: install-dependencies
-
+    permissions:
+      actions: read
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -75,15 +65,8 @@ jobs:
           chmod +x node_modules/.bin/eslint
           which eslint || echo "ESLint not in PATH"
 
-      - name: Extract node_modules
-        run: tar -xzf node_modules.tar.gz
-      - name: 'DEBUG: Verify archive download'
-        run: ls -lh
-      - name: 'DEBUG: Verify .bin directory after extraction'
-        run: ls -lA node_modules/.bin/
-
       - name: Run ESLint
-        run: ./node_modules/.bin/eslint "{src,apps,libs,test}/**/*.ts" --fix
+        run: npm run lint
 
   # Stage 3: Testing
   test:
@@ -103,13 +86,8 @@ jobs:
         with:
           create-env: 'false'
 
-      - name: Extract node_modules
-        run: tar -xzf node_modules.tar.gz
-      - name: 'DEBUG: Verify .bin directory after extraction'
-        run: ls -lA node_modules/.bin/
-
       - name: Run tests
-        run: ./node_modules/.bin/jest --coverage
+        run: npm run test:cov
 
   # Stage 4: Security
   security:
@@ -131,9 +109,6 @@ jobs:
         uses: ./.github/actions/setup-node-dependencies
         with:
           create-env: 'false'
-
-      - name: Extract node_modules
-        run: tar -xzf node_modules.tar.gz
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
