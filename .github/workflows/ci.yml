@@ -50,12 +50,9 @@ jobs:
         uses: ./.github/actions/setup-node-dependencies
         with:
           create-env: 'false'
-      - name: Debug Dependencies
-        run: |
-          echo "Package.json contents:"
-          cat package.json
-          echo "\nNode modules directory contents:"
-          ls -la node_modules
+
+      - name: Add node_modules to PATH
+        run: echo "${{ github.workspace }}/node_modules/.bin" >> $GITHUB_PATH
 
       - name: Run ESLint
         run: npm run lint
@@ -77,6 +74,9 @@ jobs:
         uses: ./.github/actions/setup-node-dependencies
         with:
           create-env: 'false'
+
+      - name: Add node_modules to PATH
+        run: echo "${{ github.workspace }}/node_modules/.bin" >> $GITHUB_PATH
 
       - name: Run tests
         run: npm run test:cov
