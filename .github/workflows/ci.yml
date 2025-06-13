@@ -31,56 +31,35 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup and Install Dependencies
-        uses: ./.github/actions/setup-node-dependencies
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          create-env: 'false'
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
   # Stage 2: Linting
   linting:
     name: Linting
     runs-on: ubuntu-latest
     needs: install-dependencies
-    permissions:
-      actions: read
-      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Debug - Before install
-        run: |
-          echo "=== Before npm ci ==="
-          node --version
-          npm --version
-          echo "ESLint in package.json:"
-          grep -i eslint package.json
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
 
-      - name: Clean install with fresh package-lock
-        run: |
-          rm -f package-lock.json
-          npm install
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Verify ESLint installation
-        run: |
-          npm list eslint || echo "ESLint not found, installing..."
-          if ! npm list eslint > /dev/null 2>&1; then
-            npm install eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser --save-dev
-          fi
-          npx eslint --version
-
-      - name: Debug - After install
-        run: |
-          echo "=== After npm ci ==="
-          echo "node_modules/.bin contents:"
-          ls -la node_modules/.bin/ | head -20
-          echo "Search for eslint:"
-          find node_modules -name "*eslint*" -type f | head -10
-          echo "npm list eslint:"
-          npm list eslint || echo "ESLint not in npm list"
-          echo "Try npx eslint --version:"
-          npx eslint --version || echo "npx eslint failed"
       - name: Run ESLint
         run: npm run lint
 
@@ -97,10 +76,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup and Restore Dependencies from Cache
-        uses: ./.github/actions/setup-node-dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          create-env: 'false'
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run tests
         run: npm run test:cov
@@ -121,10 +104,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup and Restore Dependencies from Cache
-        uses: ./.github/actions/setup-node-dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          create-env: 'false'
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -140,13 +127,12 @@ jobs:
 
       - name: Check Dependencies Security
         run: |
-          echo "Checking dependencies for security vulnerabilities..."
-          if npm audit --audit-level=moderate; then
-            echo "✅ No dependency vulnerabilities found"
-          else
+          npm audit --audit-level=moderate;
+          if [ $? -ne 0 ]; then
             echo "❌ Dependency vulnerabilities detected!"
-            npm audit --audit-level=moderate
             exit 1
+          else
+            echo "✅ No dependency vulnerabilities found"
           fi
 
   # Stage 5: Docker Build
@@ -159,8 +145,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup
-        uses: ./.github/actions/setup-node-dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@v3
