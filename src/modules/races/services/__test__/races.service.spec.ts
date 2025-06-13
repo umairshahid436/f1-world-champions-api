@@ -196,7 +196,7 @@ describe('RacesService', () => {
 
     it('should fetch, save, and return races from the API if not in the database', async () => {
       repository.find.mockResolvedValue([]);
-      seasonsService.findByYear.mockResolvedValue({ year: MOCK_YEAR } as any);
+      seasonsService.findByYear.mockResolvedValue(MOCK_RACES[0].season);
       ergastService.fetchSeasonRaces.mockResolvedValue(MOCK_ERGAST_RACES);
       raceDataTransformationService.transformErgastRaceToDbEntities.mockReturnValue(
         {
