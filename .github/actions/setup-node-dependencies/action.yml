@@ -1,26 +1,25 @@
 name: 'Setup'
-description: 'Setup Node.js, install dependencies, and create .env file with caching'
+description: 'Setup Node.js, install dependencies, and create .env file'
+
 inputs:
   create-env:
     description: 'Whether to create .env file from environment variables'
     required: false
     default: 'true'
+
 outputs:
   env-cache-hit:
     description: 'Whether the .env file was restored from cache'
     value: ${{ steps.cache-env.outputs.cache-hit }}
-  deps-cache-hit:
-    description: 'Whether the dependencies were restored from cache'
-    value: ${{ steps.setup-node.outputs.cache-hit }}
+
 runs:
   using: 'composite'
   steps:
-    - name: Setup Node.js 20.x
-      id: setup-node
+    - name: 🔧 Setup Node.js 20.x
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
-        cache: 'npm'
+
     - name: Generate .env cache key
       if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
       id: env-cache-key
@@ -30,6 +29,7 @@ runs:
         echo "config-hash=${CONFIG_HASH}" >> $GITHUB_OUTPUT
         echo "Generated .env cache key: ${CONFIG_HASH}"
       shell: bash
+
     - name: Restore .env cache
       if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
       id: cache-env
@@ -39,6 +39,7 @@ runs:
         key: ${{ runner.os }}-env-file-${{ steps.env-cache-key.outputs.config-hash }}
         restore-keys: |
           ${{ runner.os }}-env-file-
+
     - name: Create .env file (if needed and cache miss)
       if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != '' && steps.cache-env.outputs.cache-hit != 'true'
       run: |
@@ -57,20 +58,16 @@ runs:
         echo "• NODE_ENV: ${NODE_ENV}"
         echo "• Configuration loaded securely"
       shell: bash
-    - name: Install dependencies (if cache miss)
-      if: steps.setup-node.outputs.cache-hit != 'true'
+
+    - name: Install dependencies
       run: npm ci
       shell: bash
+
     - name: Setup complete
       run: |
         echo "Setup Summary:"
         echo ""
-        # Dependencies status
-        if [[ "${{ steps.setup-node.outputs.cache-hit }}" == "true" ]]; then
-          echo "Dependencies: Restored from cache"
-        else
-          echo "Dependencies: Installed and cached"
-        fi
+        echo "Dependencies: Freshly installed"
         # Environment file status
         if [[ "${{ inputs.create-env }}" == "true" ]]; then
           if [[ "${{ env.DB_PORT }}" != "" && "${{ env.DB_USER }}" != "" ]]; then
