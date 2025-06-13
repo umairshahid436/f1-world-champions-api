@@ -19,7 +19,6 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
-        cache: 'npm'
 
     - name: Generate .env cache key
       if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
