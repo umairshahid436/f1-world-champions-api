@@ -21,7 +21,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prepare-dev": "husky",
-    "prepare": "test -z \"$CI\" && npm run prepare-dev",
+    "prepare": "[ -n \"$CI\" ] || npm run prepare-dev",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d ./src/database/typeOrm.config.ts",
     "migration:create": "typeorm-ts-node-commonjs migration:create -d ./src/database/typeOrm.config.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d ./src/database/typeOrm.config.ts",
