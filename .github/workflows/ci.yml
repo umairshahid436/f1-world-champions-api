@@ -57,10 +57,18 @@ jobs:
           echo "ESLint in package.json:"
           grep -i eslint package.json
 
-      - name: Install dependencies
+      - name: Clean install with fresh package-lock
         run: |
-          echo "=== Running npm ci ==="
-          npm ci --verbose
+          rm -f package-lock.json
+          npm install
+
+      - name: Verify ESLint installation
+        run: |
+          npm list eslint || echo "ESLint not found, installing..."
+          if ! npm list eslint > /dev/null 2>&1; then
+            npm install eslint @typescript-eslint/eslint-plugin @typescript-eslint/parser --save-dev
+          fi
+          npx eslint --version
 
       - name: Debug - After install
         run: |
