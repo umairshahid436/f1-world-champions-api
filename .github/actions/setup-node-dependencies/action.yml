@@ -72,7 +72,7 @@ runs:
 
     - name: Install dependencies (if cache miss)
       if: steps.cache-nodemodules.outputs.cache-hit != 'true'
-      run: npm ci
+      run: npm ci --verbose
       shell: bash
     - name: Setup complete
       run: |
