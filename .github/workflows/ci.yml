@@ -31,11 +31,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Setup Environment
-        id: setup
         uses: ./.github/actions/setup-environment
-      - name: Install Dependencies
-        if: steps.setup.outputs.cache-hit != 'true'
-        run: npm ci
 
   # Stage 2: Linting
   linting:
@@ -131,25 +127,13 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
-          tags: |
-            type=ref,event=pr,prefix=pr-
-            type=sha,prefix=main-,enable=${{ github.ref == 'refs/heads/main' }}
-            type=sha,prefix=develop-,enable=${{ github.ref == 'refs/heads/develop' }}
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           target: production
-          push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          outputs: type=docker,dest=/tmp/f1-api-image.tar
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
         with:
@@ -186,13 +170,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
       - name: Push Docker image
         run: |
           IMAGE_ID=$(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep "${{ github.event.repository.name }}" | head -1 | awk '{print $2}')
@@ -230,4 +208,3 @@ jobs:
           security-result: ${{ needs.security.result }}
           docker-build-result: ${{ needs.docker-build.result }}
           docker-publish-result: ${{ needs.docker-publish.result }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
