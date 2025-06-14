@@ -31,26 +31,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: 🔧 Setup Node.js 20.x
-        id: setup-node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          cache: 'npm'
-      - name: Install dependencies (if cache miss)
-        run: npm install --loglevel verbose
-        shell: bash
-
-      - name: Print npm log on failure
-        if: failure()
-        run: cat /home/runner/.npm/_logs/*.log
-
-      - name: Upload npm logs as artifact
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: npm-debug-logs
-          path: /home/runner/.npm/_logs/*.log
+      - name: Setup
+        uses: ./.github/actions/setup-node-dependencies
 
   # Stage 2: Linting
   linting:
@@ -61,6 +43,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Setup
+        uses: ./.github/actions/setup-node-dependencies
+        with:
+          create-env: 'false'
 
       - name: Run ESLint
         run: npm run lint
