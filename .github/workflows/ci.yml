@@ -20,7 +20,6 @@ env:
   DB_NAME: ${{ secrets.DB_NAME }}
   # Application Configuration
   APP_PORT: ${{ secrets.PORT }}
-  NODE_ENV: development
 
 jobs:
   # Stage 1: Install Dependencies
