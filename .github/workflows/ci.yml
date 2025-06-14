@@ -22,9 +22,9 @@ env:
   APP_PORT: ${{ secrets.PORT }}
 
 jobs:
-  # Stage 1: Linting
-  linting:
-    name: Linting
+  # Stage 1: Install Dependencies
+  install-dependencies:
+    name: Install Dependencies
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -33,17 +33,41 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-      - name: Install dependencies
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ github.head_ref || github.ref_name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Install Dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
+  # Stage 2: Linting
+  linting:
+    name: Linting
+    runs-on: ubuntu-latest
+    needs: install-dependencies
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Restore node_modules from cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ github.head_ref || github.ref_name }}-${{ hashFiles('**/package-lock.json') }}
       - name: Run ESLint
         run: npm run lint:check
 
-  # Stage 2: Testing
+  # Stage 3: Testing
   test:
     name: Tests
     runs-on: ubuntu-latest
+    needs: install-dependencies
     permissions:
       pull-requests: write
       checks: write
@@ -54,14 +78,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-
+      - name: Restore node_modules from cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ github.head_ref || github.ref_name }}-${{ hashFiles('**/package-lock.json') }}
       - name: Run tests
         run: npm run test:cov
 
-  # Stage 3: Security
+  # Stage 4: Security
   security:
     name: Security
     runs-on: ubuntu-latest
@@ -70,7 +95,6 @@ jobs:
       security-events: write
       actions: read
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -83,19 +107,16 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
           queries: security-extended,security-and-quality
-
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           category: '/language:javascript-typescript'
           upload: true
-
       - name: Check Dependencies Security
         run: |
           echo "Checking dependencies for security vulnerabilities..."
@@ -107,14 +128,13 @@ jobs:
             exit 1
           fi
 
-  # Stage 4: Docker Build
+  # Stage 5: Docker Build
   docker-build:
     name: Build
     runs-on: ubuntu-latest
     needs: [linting, test, security]
     env:
       NODE_ENV: production
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -125,27 +145,20 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@v3
-
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
           tags: |
-            # PR numbers
             type=ref,event=pr,prefix=pr-
-            # Git commit SHA with branch prefix (only for branches)
             type=sha,prefix=main-,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,prefix=develop-,enable=${{ github.ref == 'refs/heads/develop' }}
-            # Named tags for specific branches
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            # Latest tag for main branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
@@ -158,7 +171,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           outputs: type=docker,dest=/tmp/f1-api-image.tar
-
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
         with:
@@ -166,18 +178,15 @@ jobs:
           path: /tmp/f1-api-image.tar
           retention-days: 1
 
-  # Stage 5: Docker Publish
+  # Stage 6: Docker Publish
   docker-publish:
     name: Docker Publish
     runs-on: ubuntu-latest
     needs: [docker-build]
-    # Only run when PR is successfully merged into main/develop or on version tags
     if: success() && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
-
     steps:
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@v3
-
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
@@ -187,36 +196,27 @@ jobs:
         run: |
           docker load --input /tmp/f1-api-image.tar
           docker image ls -a
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
           tags: |
-            # Semantic versioning tags
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            # Named tags for specific branches
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            # Latest tag for main branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
       - name: Push Docker image
         run: |
-          # Get the image ID from the loaded image
           IMAGE_ID=$(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep "${{ github.event.repository.name }}" | head -1 | awk '{print $2}')
-
-          # Tag and push each tag from metadata
           echo '${{ steps.meta.outputs.tags }}' | tr ',' '\n' | while read -r tag; do
             if [ ! -z "$tag" ]; then
               echo "Tagging and pushing: $tag"
@@ -225,17 +225,23 @@ jobs:
             fi
           done
 
-  # Stage 6: Summary
+  # Stage 7: Summary
   pipeline-summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [linting, test, security, docker-build, docker-publish]
+    needs:
+      [
+        install-dependencies,
+        linting,
+        test,
+        security,
+        docker-build,
+        docker-publish,
+      ]
     if: always()
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Generate CI Summary
         uses: ./.github/actions/pipeline-summary
         with:
