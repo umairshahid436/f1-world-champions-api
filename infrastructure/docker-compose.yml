@@ -44,6 +44,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    env_file: ../.env
     environment:
       PORT: ${PORT:-3000}
       NODE_ENV: ${NODE_ENV:-development}
@@ -54,7 +55,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
     ports:
-      - '${PORT}:${PORT}'
+      - '${PORT:-3000}:${PORT:-3000}'
 
     networks:
       - f1-network
@@ -81,9 +82,9 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-      PGADMIN_LISTEN_PORT: 80
+      PGADMIN_LISTEN_PORT: ${PGADMIN_PORT:-80}
     ports:
-      - '${PGADMIN_PORT}:80'
+      - '${PGADMIN_PORT:-80}:${PGADMIN_PORT:-80}'
     depends_on:
       - postgres
     networks:
