@@ -30,11 +30,13 @@ const mockSeasonsService = {
 };
 
 const mockEntityManager = {
-  transaction: jest.fn().mockImplementation(async (cb) => {
-    // This simulates the transaction callback
-    const manager = {}; // Mock manager if needed within the callback
-    await cb(manager);
-  }),
+  transaction: jest
+    .fn()
+    .mockImplementation(async (cb: (manager: unknown) => Promise<void>) => {
+      // This simulates the transaction callback
+      const manager = {}; // Mock manager if needed within the callback
+      await cb(manager);
+    }),
 };
 
 describe('RacesService', () => {

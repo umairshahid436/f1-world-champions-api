@@ -69,15 +69,18 @@ Create a `.env` file in the root directory. You can do this by copying the examp
 
 ```bash
 # Application Configuration
-NODE_ENV=development
 APP_PORT=3000
 
 # PostgreSQL Database Configuration
 DB_HOST=localhost
-DB_PORT=5432
-DB_USER=your_db_user
-DB_PASSWORD=your_db_password
-DB_NAME=f1_champions_db
+DB_PORT=****
+DB_USER=****
+DB_PASSWORD=****
+DB_NAME=****
+
+# PgAdmin Configuration
+PGADMIN_EMAIL=****
+PGADMIN_PASSWORD=****
 ```
 
 **Environment Variables Explained:**

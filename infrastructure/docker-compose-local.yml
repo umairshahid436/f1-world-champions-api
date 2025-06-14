@@ -38,9 +38,14 @@ services:
 
   # F1 World Champions API
   world-champions-api:
-    image: umairshahidnl/f1-world-champions-api:dev
+    build:
+      context: ../
+      dockerfile: Dockerfile
+      args:
+        PORT: ${PORT}
     container_name: world-champions-api
     restart: unless-stopped
+    env_file: ../.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,6 +83,7 @@ services:
     image: dpage/pgadmin4:latest
     container_name: f1-pgadmin
     restart: unless-stopped
+    env_file: ../.env
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}

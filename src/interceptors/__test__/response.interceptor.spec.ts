@@ -2,10 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, CallHandler } from '@nestjs/common';
 import { of } from 'rxjs';
 import { ResponseInterceptor } from '../response.interceptor';
-import { ApiResponse } from '../../interfaces/api.interface';
 
 describe('ResponseInterceptor', () => {
-  let interceptor: ResponseInterceptor<any>;
+  let interceptor: ResponseInterceptor<unknown>;
   let mockExecutionContext: ExecutionContext;
   let mockCallHandler: CallHandler;
   let mockHandle: jest.Mock;
@@ -15,7 +14,7 @@ describe('ResponseInterceptor', () => {
       providers: [ResponseInterceptor],
     }).compile();
 
-    interceptor = module.get<ResponseInterceptor<any>>(ResponseInterceptor);
+    interceptor = module.get<ResponseInterceptor<unknown>>(ResponseInterceptor);
 
     // Mock ExecutionContext
     mockExecutionContext = {
@@ -45,18 +44,15 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should transform single object response correctly', (done) => {
-      // Arrange
       const mockData = { id: 1, name: 'Test User' };
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result).toEqual({
           data: mockData,
           message: 'Success',
@@ -68,7 +64,6 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should transform array response with count property', (done) => {
-      // Arrange
       const mockData = [
         { id: 1, name: 'User 1' },
         { id: 2, name: 'User 2' },
@@ -76,14 +71,12 @@ describe('ResponseInterceptor', () => {
       ];
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result).toEqual({
           data: mockData,
           message: 'Success',
@@ -95,18 +88,15 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should handle empty array response', (done) => {
-      // Arrange
-      const mockData: any[] = [];
+      const mockData: [] = [];
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result).toEqual({
           data: mockData,
           message: 'Success',
@@ -118,18 +108,15 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should handle null response', (done) => {
-      // Arrange
       const mockData = null;
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result).toEqual({
           data: null,
           message: 'Success',
@@ -141,18 +128,15 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should handle undefined response', (done) => {
-      // Arrange
       const mockData = undefined;
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result).toEqual({
           data: undefined,
           message: 'Success',
@@ -164,18 +148,15 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should handle string response', (done) => {
-      // Arrange
       const mockData = 'Hello World';
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result).toEqual({
           data: 'Hello World',
           message: 'Success',
@@ -187,18 +168,15 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should handle number response', (done) => {
-      // Arrange
       const mockData = 42;
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result).toEqual({
           data: 42,
           message: 'Success',
@@ -210,18 +188,15 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should handle boolean response', (done) => {
-      // Arrange
       const mockData = true;
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result).toEqual({
           data: true,
           message: 'Success',
@@ -233,7 +208,6 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should handle nested object response', (done) => {
-      // Arrange
       const mockData = {
         user: {
           id: 1,
@@ -248,14 +222,12 @@ describe('ResponseInterceptor', () => {
       };
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result).toEqual({
           data: mockData,
           message: 'Success',
@@ -267,18 +239,15 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should handle array of different data types', (done) => {
-      // Arrange
       const mockData = [1, 'string', { key: 'value' }, null, true];
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result).toEqual({
           data: mockData,
           message: 'Success',
@@ -290,19 +259,16 @@ describe('ResponseInterceptor', () => {
     });
 
     it('should not modify the original data', (done) => {
-      // Arrange
       const originalData = { id: 1, name: 'Test' };
       const mockData = { ...originalData };
       mockHandle.mockReturnValue(of(mockData));
 
-      // Act
       const result$ = interceptor.intercept(
         mockExecutionContext,
         mockCallHandler,
       );
 
-      // Assert
-      result$.subscribe((result: ApiResponse<any>) => {
+      result$.subscribe((result) => {
         expect(result.data).toEqual(originalData);
         expect(result.data).not.toBe(originalData); // Should not be the same reference
         expect(mockData).toEqual(originalData); // Original mock data unchanged

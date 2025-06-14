@@ -12,7 +12,7 @@ export class RaceRepository {
     private readonly repository: Repository<Race>,
   ) {}
 
-  async findRacesWithChampionFlag(year: number): Promise<any[]> {
+  async findRacesWithChampionFlag(year: number) {
     return this.repository
       .createQueryBuilder('r')
       .leftJoin(Driver, 'd', 'd.driverId = r.driverId')
