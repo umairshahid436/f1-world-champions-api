@@ -2,12 +2,19 @@
 
 F1 World Champions is a modern RESTful API that showcases Formula 1 racing data throughout history. It provides endpoints for exploring F1 seasons, viewing race details, and discovering information about world champions. The API serves as a backend for any web or mobile application.
 
-## API In Action
+## API Documentation
 
-The API includes an interactive Swagger UI for exploring endpoints, testing requests, and viewing schema details.
+Interactive API documentation is generated using Swagger and is available when the application is running.
 
-**Swagger UI Example:**
-![Swagger UI](https://github.com/umaireu/f1-world-champions-api/assets/19448896/60e90c5d-de0a-41e2-b103-60bdc5fd84b1)
+Navigate to **[http://localhost:3000/api-docs](http://localhost:3000/api-docs)**
+
+From this interface, you can:
+
+- View all available endpoints.
+- See request and response schemas for each endpoint.
+- Execute requests directly from your browser to test the API.
+
+![Swagger UI](![gif-gif](https://github.com/user-attachments/assets/79942edf-607c-4eee-8482-a6b8de2ddb35))
 
 ## Technology Stack
 
@@ -141,6 +148,44 @@ PGADMIN_PASSWORD=****
 7.  **Open the API documentation**
     Navigate to `http://localhost:3000/api-docs` in your browser to see the Swagger UI.
 
+## Running with Docker Compose
+
+This is the recommended way to run the application for a consistent development environment. The following command will start the NestJS API, a PostgreSQL database, and PgAdmin.
+
+### Prerequisites
+
+- Docker and Docker Compose
+
+### Instructions
+
+1.  **Create Environment File**
+
+    Create a `.env` file in the root of the project. The application will not start without it. You can copy the structure from the `Environment Setup` section above.
+
+2.  **Start the Application**
+
+    Run the following command from the project root. This will build the Docker image and start all the services.
+
+    ```bash
+    docker-compose -f infrastructure/docker-compose.yml up --build -d
+    ```
+
+3.  **Run Database Migrations**
+
+    The first time you start the application, you must run the database migrations to set up the database schema.
+
+    ```bash
+    docker-compose -f infrastructure/docker-compose.yml exec world-champions-api npm run migration:run
+    ```
+
+4.  **Stopping the Application**
+
+    To stop all the running containers, use the following command:
+
+    ```bash
+    docker-compose -f infrastructure/docker-compose.yml down
+    ```
+
 ## Available Scripts
 
 ```bash
@@ -176,20 +221,13 @@ Before any merge request can be approved and merged, all pipeline stages in our 
 
 1.  **Install Dependencies**: Installs all required `npm` packages.
 2.  **Linting**: Runs `ESLint` to ensure code style and quality are maintained.
-3.  **Testing**: Executes the entire test suite (`unit` and `e2e`) to prevent regressions. A minimum coverage threshold must be met.
+3.  **Testing**: Executes the entire test suite (`unit` and integration) to prevent regressions. A minimum coverage threshold must be met (70%).
+
+    ![Screenshot 2025-06-14 at 20 42 16](https://github.com/user-attachments/assets/65440fc2-0dd6-49a7-b5a1-616171dd029d)
+
 4.  **Security**: Performs a `CodeQL` analysis to scan for common security vulnerabilities.
 5.  **Build**: Creates a production build to ensure the application compiles correctly.
 6.  **Publish**: Publish a Docker image.
 7.  **Summary**: Provides a summary of the pipeline run.
-
-## API Documentation
-
-Interactive API documentation is generated using Swagger and is available when the application is running.
-
-Navigate to **[http://localhost:3000/api-docs](http://localhost:3000/api-docs)**
-
-From this interface, you can:
-
-- View all available endpoints.
-- See request and response schemas for each endpoint.
-- Execute requests directly from your browser to test the API.
+   
+<img width="1420" alt="Screenshot 2025-06-14 at 21 16 31" src="https://github.com/user-attachments/assets/9e38d2e1-43a8-49fc-9ce3-fbe94da44e09" />
