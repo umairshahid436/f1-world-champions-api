@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ErgastDriverStanding } from '@modules/external/ergast/ergast.interface';
-import { Driver } from '@src/database/entities/driver.entity';
-import { Constructor } from '@src/database/entities/constructor.entity';
-import { Season } from '@src/database/entities/season.entity';
+import { ErgastDriverStanding } from '../../external/ergast/ergast.interface';
+import { Driver } from '../../../database/entities/driver.entity';
+import { Constructor } from '../../../database/entities/constructor.entity';
+import { Season } from '../../../database/entities/season.entity';
 
 export interface TransformedData {
   drivers: Partial<Driver>[];

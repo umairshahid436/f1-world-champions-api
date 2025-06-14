@@ -3,3 +3,5 @@ export interface ApiResponse<T = any> {
   message: string;
   count?: number;
 }
+
+export type SortBy = 'ASC' | 'DESC';
