@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConstructorsService } from './constructors.service';
-import { Constructor } from '../../database/entities/constructor.entity';
+import { ConstructorsService } from '../constructors.service';
+import { Constructor } from '../../../database/entities/constructor.entity';
 import { EntityManager } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 

@@ -14,18 +14,21 @@ export class RaceDataTransformationService {
   transformErgastRaceToDbEntities(
     ergastRaces: ErgastRace[],
   ): RaceTransformationResult {
-    const driversMap = new Map<string, Driver>();
+    const driversMap = this.extractUniqueDrivers(ergastRaces);
     const races: Race[] = [];
 
     for (const ergastRace of ergastRaces) {
       const winner = ergastRace.Results[0];
-      const driver = new Driver({
-        ...winner.Driver,
-        permanentNumber: winner.Driver.permanentNumber || '',
-      });
-      if (!driversMap.has(driver.driverId)) {
-        driversMap.set(driver.driverId, driver);
+
+      // If there is no winner data for the race, skip it.
+      if (!winner) {
+        continue;
       }
+
+      const driver = driversMap.get(winner.Driver.driverId);
+      // This should not happen with valid API data
+      if (!driver) continue;
+
       const race = new Race({
         seasonYear: parseInt(ergastRace.season),
         points: winner.points,
@@ -43,5 +46,22 @@ export class RaceDataTransformationService {
       drivers: Array.from(driversMap.values()),
       races,
     };
+  }
+
+  extractUniqueDrivers(ergastRaces: ErgastRace[]): Map<string, Driver> {
+    const driversMap = new Map<string, Driver>();
+    for (const ergastRace of ergastRaces) {
+      const winner = ergastRace.Results[0];
+      if (winner && !driversMap.has(winner.Driver.driverId)) {
+        driversMap.set(
+          winner.Driver.driverId,
+          new Driver({
+            ...winner.Driver,
+            permanentNumber: winner.Driver.permanentNumber || '',
+          }),
+        );
+      }
+    }
+    return driversMap;
   }
 }

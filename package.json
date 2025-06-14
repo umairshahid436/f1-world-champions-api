@@ -84,7 +84,7 @@
     ],
     "coverageThreshold": {
       "global": {
-        "lines": 0
+        "lines": 70
       }
     },
     "rootDir": "src",

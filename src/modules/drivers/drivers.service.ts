@@ -15,4 +15,7 @@ export class DriversService {
   ) {
     await manager.upsert(Driver, drivers, ['driverId']);
   }
+  async upsertDrivers(drivers: Partial<Driver>[]) {
+    await this.repository.upsert(drivers, ['driverId']);
+  }
 }
