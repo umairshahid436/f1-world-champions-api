@@ -16,6 +16,7 @@ runs:
   using: 'composite'
   steps:
     - name: 🔧 Setup Node.js 20.x
+      id: setup-node
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
@@ -41,15 +42,6 @@ runs:
         restore-keys: |
           ${{ runner.os }}-env-file-
 
-    - name: Restore node_modules cache
-      id: cache-nodemodules
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-modules-
-
     - name: Create .env file (if needed and cache miss)
       if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != '' && steps.cache-env.outputs.cache-hit != 'true'
       run: |
@@ -71,8 +63,18 @@ runs:
       shell: bash
 
     - name: Install dependencies (if cache miss)
-      if: steps.cache-nodemodules.outputs.cache-hit != 'true'
-      run: npm install
+      if: steps.setup-node.outputs.cache-hit != 'true'
+      run: npm ci
+      shell: bash
+
+    - name: Verify Dependency Installation
+      run: |
+        if [ -f "node_modules/.bin/eslint" ]; then
+          echo "✅ ESLint executable found."
+        else
+          echo "❌ ESLint executable NOT found."
+          exit 1
+        fi
       shell: bash
 
     - name: Setup complete
@@ -81,7 +83,7 @@ runs:
         echo ""
 
         # Dependencies status
-        if [[ "${{ steps.cache-nodemodules.outputs.cache-hit }}" == "true" ]]; then
+        if [[ "${{ steps.setup-node.outputs.cache-hit }}" == "true" ]]; then
           echo "Dependencies: Restored from cache"
         else
           echo "Dependencies: Installed and cached"
