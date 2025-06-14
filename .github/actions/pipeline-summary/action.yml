@@ -72,15 +72,24 @@ runs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
         echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-        echo "|  Dependencies | ${{ inputs.install-dependencies-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "|  Linting | ${{ inputs.linting-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "|  Testing | ${{ inputs.test-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "|  Security| ${{ inputs.security-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-        echo "|  Docker Build | ${{ inputs.docker-build-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
 
-        # Add Docker Publish row only if it ran
+        # Process each result and assign an icon
+        RESULT_ICON_INSTALL=$([[ "${{ inputs.install-dependencies-result }}" == "success" ]] && echo "✅ Success" || ([[ "${{ inputs.install-dependencies-result }}" == "skipped" ]] && echo "⚪ Skipped" || echo "❌ Failed"))
+        RESULT_ICON_LINT=$([[ "${{ inputs.linting-result }}" == "success" ]] && echo "✅ Success" || ([[ "${{ inputs.linting-result }}" == "skipped" ]] && echo "⚪ Skipped" || echo "❌ Failed"))
+        RESULT_ICON_TEST=$([[ "${{ inputs.test-result }}" == "success" ]] && echo "✅ Success" || ([[ "${{ inputs.test-result }}" == "skipped" ]] && echo "⚪ Skipped" || echo "❌ Failed"))
+        RESULT_ICON_SECURITY=$([[ "${{ inputs.security-result }}" == "success" ]] && echo "✅ Success" || ([[ "${{ inputs.security-result }}" == "skipped" ]] && echo "⚪ Skipped" || echo "❌ Failed"))
+        RESULT_ICON_BUILD=$([[ "${{ inputs.docker-build-result }}" == "success" ]] && echo "✅ Success" || ([[ "${{ inputs.docker-build-result }}" == "skipped" ]] && echo "⚪ Skipped" || echo "❌ Failed"))
+
+        echo "|  Dependencies | $RESULT_ICON_INSTALL |" >> $GITHUB_STEP_SUMMARY
+        echo "|  Linting | $RESULT_ICON_LINT |" >> $GITHUB_STEP_SUMMARY
+        echo "|  Testing | $RESULT_ICON_TEST |" >> $GITHUB_STEP_SUMMARY
+        echo "|  Security| $RESULT_ICON_SECURITY |" >> $GITHUB_STEP_SUMMARY
+        echo "|  Docker Build | $RESULT_ICON_BUILD |" >> $GITHUB_STEP_SUMMARY
+
+        # Add Docker Publish row only if it was not skipped
         if [[ "${{ inputs.docker-publish-result }}" != "skipped" ]]; then
-          echo "|  Docker Publish | ${{ inputs.docker-publish-result == 'success' && '✅ Success' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          RESULT_ICON_PUBLISH=$([[ "${{ inputs.docker-publish-result }}" == "success" ]] && echo "✅ Success" || echo "❌ Failed")
+          echo "|  Docker Publish | $RESULT_ICON_PUBLISH |" >> $GITHUB_STEP_SUMMARY
         fi
         echo "" >> $GITHUB_STEP_SUMMARY
 
@@ -90,7 +99,16 @@ runs:
         # Check if core stages passed (Docker Publish is optional)
         CORE_SUCCESS=true
         if [[ "${{ inputs.install-dependencies-result }}" != "success" || "${{ inputs.linting-result }}" != "success" || "${{ inputs.test-result }}" != "success" || "${{ inputs.security-result }}" != "success" || "${{ inputs.docker-build-result }}" != "success" ]]; then
-          CORE_SUCCESS=false
+          # A skipped job should not fail the overall status for a PR
+          if [[ "${{ inputs.github-event-name }}" == "pull_request" ]]; then
+            if [[ "${{ inputs.install-dependencies-result }}" == "skipped" || "${{ inputs.linting-result }}" == "skipped" || "${{ inputs.test-result }}" == "skipped" || "${{ inputs.security-result }}" == "skipped" || "${{ inputs.docker-build-result }}" == "skipped" ]]; then
+              CORE_SUCCESS=true # Override, as skipped is not a failure in PR context
+            else
+              CORE_SUCCESS=false
+            fi
+          else
+            CORE_SUCCESS=false
+          fi
         fi
 
         if [[ "$CORE_SUCCESS" == "true" ]]; then
