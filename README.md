@@ -2,6 +2,10 @@
 
 F1 World Champions is a modern RESTful API that showcases Formula 1 racing data throughout history. It provides endpoints for exploring F1 seasons, viewing race details, and discovering information about world champions. The API serves as a backend for any web or mobile application.
 
+## Frontend Application
+
+To run the frontend app, visit the repository: [https://github.com/umaireu/f1-world-champions-web]
+
 ## API Documentation
 
 Interactive API documentation is generated using Swagger and is available when the application is running.
