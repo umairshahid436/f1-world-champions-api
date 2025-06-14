@@ -72,7 +72,7 @@ runs:
 
     - name: Install dependencies (if cache miss)
       if: steps.cache-nodemodules.outputs.cache-hit != 'true'
-      run: npm ci
+      run: npm install
       shell: bash
 
     - name: Setup complete
@@ -93,13 +93,13 @@ runs:
             if [[ "${{ steps.cache-env.outputs.cache-hit }}" == "true" ]]; then
               echo "🔧 .env file: Restored from cache"
             else
-              echo "🔧 .env file: Created and cached"
+              echo ".env file: Created and cached"
             fi
           else
-            echo "⚠️ .env file: Skipped (missing environment variables)"
+            echo ".env file: Skipped (missing environment variables)"
           fi
         else
-          echo "🔧 .env file: Skipped (create-env=false)"
+          echo ".env file: Skipped (create-env=false)"
         fi
 
         echo ""
