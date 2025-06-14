@@ -1,0 +1,16 @@
+### Get races for 2023 season 
+
+GET http://localhost:3000/api/races/season/2023
+Content-Type: application/json
+
+### Get races for 2022 season (22 races - full season)
+
+GET http://localhost:3000/api/races/season/2022
+Content-Type: application/json
+
+### Get races for 2005 season (19 races - older season)
+
+GET http://localhost:3000/api/races/season/2005
+Content-Type: application/json
+
+

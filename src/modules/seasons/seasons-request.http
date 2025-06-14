@@ -1,0 +1,4 @@
+### Get season champions
+
+GET http://localhost:3000/api/seasons/champions?fromYear=2020&toYear=2023
+Content-Type: application/json

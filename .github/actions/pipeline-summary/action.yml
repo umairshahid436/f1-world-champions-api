@@ -1,0 +1,136 @@
+name: 'CI Summary'
+description: 'CI pipeline summary report'
+
+inputs:
+  install-dependencies-result:
+    description: 'Result of install-dependencies job'
+    required: true
+  linting-result:
+    description: 'Result of linting job'
+    required: true
+  test-result:
+    description: 'Result of test job'
+    required: true
+  security-result:
+    description: 'Result of security job'
+    required: true
+  docker-build-result:
+    description: 'Result of docker-build job'
+    required: true
+  docker-publish-result:
+    description: 'Result of docker-publish job'
+    required: false
+    default: 'skipped'
+  github-event-name:
+    description: 'GitHub event name'
+    required: true
+  github-event-number:
+    description: 'GitHub event number (for PRs)'
+    required: false
+  github-base-ref:
+    description: 'GitHub base ref (for PRs)'
+    required: false
+  github-ref-name:
+    description: 'GitHub ref name'
+    required: true
+  default-branch:
+    description: 'Repository default branch'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate CI Summary
+      shell: bash
+      run: |
+        # Determine if this is the default/primary branch
+        DEFAULT_BRANCH="${{ inputs.default-branch }}"
+        CURRENT_BRANCH="${{ inputs.github-ref-name }}"
+
+        if [[ "${{ inputs.github-event-name }}" == "pull_request" ]]; then
+          echo "## F1 World Champions PR Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Pull Request:** #${{ inputs.github-event-number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Target Branch:** ${{ inputs.github-base-ref }}" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ inputs.github-base-ref }}" == "$DEFAULT_BRANCH" ]]; then
+            echo "**Type:** Merging to ${{ inputs.github-base-ref }} (default)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Type:** Merging to ${{ inputs.github-base-ref }} (feature)" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "## F1 World Champions Post-Merge Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ inputs.github-ref-name }}" >> $GITHUB_STEP_SUMMARY
+          if [[ "$CURRENT_BRANCH" == "$DEFAULT_BRANCH" ]]; then
+            echo "**Type:** ${{ inputs.github-ref-name }} (default branch)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Type:** ${{ inputs.github-ref-name }} (feature branch)" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "###  Stage Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+
+        # Process each result and assign an icon
+        RESULT_ICON_INSTALL=$([[ "${{ inputs.install-dependencies-result }}" == "success" ]] && echo "✅ Success" || ([[ "${{ inputs.install-dependencies-result }}" == "skipped" ]] && echo "⚪ Skipped" || echo "❌ Failed"))
+        RESULT_ICON_LINT=$([[ "${{ inputs.linting-result }}" == "success" ]] && echo "✅ Success" || ([[ "${{ inputs.linting-result }}" == "skipped" ]] && echo "⚪ Skipped" || echo "❌ Failed"))
+        RESULT_ICON_TEST=$([[ "${{ inputs.test-result }}" == "success" ]] && echo "✅ Success" || ([[ "${{ inputs.test-result }}" == "skipped" ]] && echo "⚪ Skipped" || echo "❌ Failed"))
+        RESULT_ICON_SECURITY=$([[ "${{ inputs.security-result }}" == "success" ]] && echo "✅ Success" || ([[ "${{ inputs.security-result }}" == "skipped" ]] && echo "⚪ Skipped" || echo "❌ Failed"))
+        RESULT_ICON_BUILD=$([[ "${{ inputs.docker-build-result }}" == "success" ]] && echo "✅ Success" || ([[ "${{ inputs.docker-build-result }}" == "skipped" ]] && echo "⚪ Skipped" || echo "❌ Failed"))
+
+        echo "|  Dependencies | $RESULT_ICON_INSTALL |" >> $GITHUB_STEP_SUMMARY
+        echo "|  Linting | $RESULT_ICON_LINT |" >> $GITHUB_STEP_SUMMARY
+        echo "|  Testing | $RESULT_ICON_TEST |" >> $GITHUB_STEP_SUMMARY
+        echo "|  Security| $RESULT_ICON_SECURITY |" >> $GITHUB_STEP_SUMMARY
+        echo "|  Docker Build | $RESULT_ICON_BUILD |" >> $GITHUB_STEP_SUMMARY
+
+        # Add Docker Publish row only if it was not skipped
+        if [[ "${{ inputs.docker-publish-result }}" != "skipped" ]]; then
+          RESULT_ICON_PUBLISH=$([[ "${{ inputs.docker-publish-result }}" == "success" ]] && echo "✅ Success" || echo "❌ Failed")
+          echo "|  Docker Publish | $RESULT_ICON_PUBLISH |" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "###  Overall Status" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        # Check if core stages passed (Docker Publish is optional)
+        CORE_SUCCESS=true
+        if [[ "${{ inputs.install-dependencies-result }}" != "success" || "${{ inputs.linting-result }}" != "success" || "${{ inputs.test-result }}" != "success" || "${{ inputs.security-result }}" != "success" || "${{ inputs.docker-build-result }}" != "success" ]]; then
+          # A skipped job should not fail the overall status for a PR
+          if [[ "${{ inputs.github-event-name }}" == "pull_request" ]]; then
+            if [[ "${{ inputs.install-dependencies-result }}" == "skipped" || "${{ inputs.linting-result }}" == "skipped" || "${{ inputs.test-result }}" == "skipped" || "${{ inputs.security-result }}" == "skipped" || "${{ inputs.docker-build-result }}" == "skipped" ]]; then
+              CORE_SUCCESS=true # Override, as skipped is not a failure in PR context
+            else
+              CORE_SUCCESS=false
+            fi
+          else
+            CORE_SUCCESS=false
+          fi
+        fi
+
+        if [[ "$CORE_SUCCESS" == "true" ]]; then
+          if [[ "${{ inputs.github-event-name }}" == "pull_request" ]]; then
+            echo "All checks passed! PR is ready for merge into ${{ inputs.github-base-ref }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Branch ${{ inputs.github-ref-name }} is healthy ✅" >> $GITHUB_STEP_SUMMARY
+            
+            # Add Docker status for post-merge
+            if [[ "${{ inputs.docker-publish-result }}" == "success" ]]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "🐳 **Docker Image Published Successfully**" >> $GITHUB_STEP_SUMMARY
+              echo "Pull the latest image: \`docker pull your-username/f1-world-champions-api:${{ inputs.github-ref-name }}\`" >> $GITHUB_STEP_SUMMARY
+            elif [[ "${{ inputs.docker-publish-result }}" == "failure" ]]; then
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "⚠️ **Docker Publish Failed** - Check logs for details" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+        else
+          if [[ "${{ inputs.github-event-name }}" == "pull_request" ]]; then
+            echo "Some checks failed. Please fix issues before merging into ${{ inputs.github-base-ref }} ❗" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Post-merge validation failed! Branch ${{ inputs.github-ref-name }} needs attention ❗" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi

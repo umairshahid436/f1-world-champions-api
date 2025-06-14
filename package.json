@@ -8,25 +8,46 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "prepare": "test -n \"$CI\" || husky",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d ./src/database/typeOrm.config.ts",
+    "migration:create": "typeorm-ts-node-commonjs migration:create -d ./src/database/typeOrm.config.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d ./src/database/typeOrm.config.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d ./src/database/typeOrm.config.ts",
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d ./src/database/typeOrm.config.ts"
   },
   "dependencies": {
+    "@nestjs/axios": "^4.0.0",
     "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.2.0",
+    "@nestjs/typeorm": "^11.0.0",
+    "axios": "^1.9.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "dotenv": "^16.5.0",
+    "pg": "^8.16.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "swagger-ui-express": "^5.0.1",
+    "typeorm": "^0.3.24"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
@@ -37,11 +58,13 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.7",
+    "@types/pg": "^8.15.4",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.0.0",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
@@ -59,13 +82,36 @@
       "json",
       "ts"
     ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 70
+      }
+    },
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "collectCoverage": true,
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "\\.test\\.(js|ts)$",
+      "\\.entity\\.(js|ts)$",
+      "\\.module\\.(js|ts)$",
+      "\\.interface\\.(js|ts)$",
+      "\\.spec\\.(js|ts)$",
+      "\\.d\\.ts$",
+      "\\.config\\.",
+      "/dist/",
+      "main\\.ts$"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
+    ],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "json-summary"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

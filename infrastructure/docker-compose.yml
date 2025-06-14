@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: f1-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - f1-network
+
+  # F1 World Champions API
+  world-champions-api:
+    image: umairshahidnl/f1-world-champions-api:dev
+    container_name: world-champions-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: ${PORT:-3000}
+      NODE_ENV: ${NODE_ENV:-development}
+      #  db config
+      DB_HOST: postgres # Hardcoded since it's always the service name in Docker
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    ports:
+      - '${PORT:-3000}:${PORT:-3000}'
+
+    networks:
+      - f1-network
+
+  # pgAdmin (Development/Tools only)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: f1-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_LISTEN_PORT: ${PGADMIN_PORT:-80}
+    ports:
+      - '${PGADMIN_PORT:-80}:${PGADMIN_PORT:-80}'
+    depends_on:
+      - postgres
+    networks:
+      - f1-network
+    profiles:
+      - tools # Only runs when explicitly enabled
+
+# Networks
+networks:
+  f1-network:
+    driver: bridge
+
+# Volumes
+volumes:
+  postgres_data:
+    driver: local
