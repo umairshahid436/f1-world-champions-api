@@ -12,8 +12,9 @@ From this interface, you can:
 
 - View all available endpoints.
 - Execute requests directly from your browser to test the API.
+  
+![gif-gif](https://github.com/user-attachments/assets/868edaaf-4e56-4482-8a7c-0b9166d877fa)
 
-![Swagger UI](![gif-gif](https://github.com/user-attachments/assets/79942edf-607c-4eee-8482-a6b8de2ddb35))
 
 ## Technology Stack
 
