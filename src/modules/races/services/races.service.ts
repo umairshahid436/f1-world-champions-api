@@ -35,7 +35,7 @@ export class RacesService {
 
         if (racesFromDb.length > 0) {
           this.logger.log(`Race data found in database for ${year}`);
-          return racesFromDb;
+          return racesFromDb as RaceDto[];
         }
 
         // Step 3: If no races in DB, fetch from the external API.
@@ -60,7 +60,7 @@ export class RacesService {
         const finalRaces =
           await this.raceRepository.findRacesWithChampionFlag(year);
 
-        return finalRaces;
+        return finalRaces as RaceDto[];
       }
       this.logger.log(`Season ${year} does not exist.`);
       return [];

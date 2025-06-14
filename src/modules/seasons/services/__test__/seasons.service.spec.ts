@@ -109,10 +109,14 @@ describe('SeasonsService', () => {
         {
           provide: EntityManager,
           useValue: {
-            transaction: jest.fn().mockImplementation(async (callback) => {
-              const mockManager = { upsert: jest.fn() };
-              await callback(mockManager);
-            }),
+            transaction: jest
+              .fn()
+              .mockImplementation(
+                async (callback: (manager: unknown) => Promise<void>) => {
+                  const mockManager = { upsert: jest.fn() };
+                  await callback(mockManager);
+                },
+              ),
           },
         },
         {

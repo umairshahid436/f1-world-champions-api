@@ -224,9 +224,10 @@ jobs:
       - name: Generate CI Summary
         uses: ./.github/actions/pipeline-summary
         with:
-          linting-status: ${{ needs.linting.result }}
-          test-status: ${{ needs.test.result }}
-          security-status: ${{ needs.security.result }}
-          docker-build-status: ${{ needs.docker-build.result }}
-          docker-publish-status: ${{ needs.docker-publish.result }}
+          install-dependencies-result: ${{ needs.install-dependencies.result }}
+          linting-result: ${{ needs.linting.result }}
+          test-result: ${{ needs.test.result }}
+          security-result: ${{ needs.security.result }}
+          docker-build-result: ${{ needs.docker-build.result }}
+          docker-publish-result: ${{ needs.docker-publish.result }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
