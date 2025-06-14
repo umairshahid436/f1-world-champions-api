@@ -1,5 +1,16 @@
 name: 'Setup'
-description: 'Setup Node.js and install dependencies with caching'
+description: 'Setup Node.js, install dependencies, and create .env file with caching'
+
+inputs:
+  create-env:
+    description: 'Whether to create .env file from environment variables'
+    required: false
+    default: 'true'
+
+outputs:
+  env-cache-hit:
+    description: 'Whether the .env file was restored from cache'
+    value: ${{ steps.cache-env.outputs.cache-hit }}
 
 runs:
   using: 'composite'
@@ -8,27 +19,90 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: '20.x'
+        cache: 'npm'
 
-    - name: Get npm cache directory
-      id: npm-cache-dir
+    - name: Generate .env cache key
+      if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
+      id: env-cache-key
       run: |
-        echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+        # Create a hash based on NON-SECRET configuration only for security
+        CONFIG_HASH=$(echo "${DB_HOST}-${NODE_ENV}" | sha256sum | cut -d' ' -f1)
+        echo "config-hash=${CONFIG_HASH}" >> $GITHUB_OUTPUT
+        echo "Generated .env cache key: ${CONFIG_HASH}"
       shell: bash
 
-    - name: Cache npm dependencies
+    - name: Restore .env cache
+      if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != ''
+      id: cache-env
       uses: actions/cache@v4
       with:
-        path: ${{ steps.npm-cache-dir.outputs.dir }}
-        key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+        path: .env
+        key: ${{ runner.os }}-env-file-${{ steps.env-cache-key.outputs.config-hash }}
         restore-keys: |
-          ${{ runner.os }}-npm-
+          ${{ runner.os }}-env-file-
 
-    - name: Install dependencies
+    - name: Restore node_modules cache
+      id: cache-nodemodules
+      uses: actions/cache@v4
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-modules-
+
+    - name: Create .env file (if needed and cache miss)
+      if: inputs.create-env == 'true' && env.DB_PORT != '' && env.DB_USER != '' && steps.cache-env.outputs.cache-hit != 'true'
+      run: |
+        cat > .env << EOF
+        # Database Configuration
+        DB_HOST=${DB_HOST}
+        DB_PORT=${DB_PORT}
+        DB_USER=${DB_USER}
+        DB_PASSWORD=${DB_PASSWORD}
+        DB_NAME=${DB_NAME}
+
+        # Application Configuration
+        PORT=${APP_PORT}
+        NODE_ENV=${NODE_ENV}
+        EOF
+        echo "Created .env file with configuration"
+        echo "• NODE_ENV: ${NODE_ENV}"
+        echo "• Configuration loaded securely"
+      shell: bash
+
+    - name: Install dependencies (if cache miss)
+      if: steps.cache-nodemodules.outputs.cache-hit != 'true'
       run: npm ci
       shell: bash
 
-    - name: Dependencies ready
+    - name: Setup complete
       run: |
+        echo "Setup Summary:"
+        echo ""
+
+        # Dependencies status
+        if [[ "${{ steps.cache-nodemodules.outputs.cache-hit }}" == "true" ]]; then
+          echo "Dependencies: Restored from cache"
+        else
+          echo "Dependencies: Installed and cached"
+        fi
+
+        # Environment file status
+        if [[ "${{ inputs.create-env }}" == "true" ]]; then
+          if [[ "${{ env.DB_PORT }}" != "" && "${{ env.DB_USER }}" != "" ]]; then
+            if [[ "${{ steps.cache-env.outputs.cache-hit }}" == "true" ]]; then
+              echo "🔧 .env file: Restored from cache"
+            else
+              echo "🔧 .env file: Created and cached"
+            fi
+          else
+            echo "⚠️ .env file: Skipped (missing environment variables)"
+          fi
+        else
+          echo "🔧 .env file: Skipped (create-env=false)"
+        fi
+
+        echo ""
         echo "Node.js version: $(node --version)"
         echo "npm version: $(npm --version)"
       shell: bash
