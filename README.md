@@ -14,10 +14,7 @@ From this interface, you can:
 - See request and response schemas for each endpoint.
 - Execute requests directly from your browser to test the API.
 
-**Swagger UI Example:**
-![Swagger UI](
-
-)
+![Swagger UI](![gif-gif](https://github.com/user-attachments/assets/79942edf-607c-4eee-8482-a6b8de2ddb35))
 
 ## Technology Stack
 
@@ -224,8 +221,13 @@ Before any merge request can be approved and merged, all pipeline stages in our 
 
 1.  **Install Dependencies**: Installs all required `npm` packages.
 2.  **Linting**: Runs `ESLint` to ensure code style and quality are maintained.
-3.  **Testing**: Executes the entire test suite (`unit` and `e2e`) to prevent regressions. A minimum coverage threshold must be met.
+3.  **Testing**: Executes the entire test suite (`unit` and integration) to prevent regressions. A minimum coverage threshold must be met (70%).
+
+    ![Screenshot 2025-06-14 at 20 42 16](https://github.com/user-attachments/assets/65440fc2-0dd6-49a7-b5a1-616171dd029d)
+
 4.  **Security**: Performs a `CodeQL` analysis to scan for common security vulnerabilities.
 5.  **Build**: Creates a production build to ensure the application compiles correctly.
 6.  **Publish**: Publish a Docker image.
 7.  **Summary**: Provides a summary of the pipeline run.
+   
+<img width="1420" alt="Screenshot 2025-06-14 at 21 16 31" src="https://github.com/user-attachments/assets/9e38d2e1-43a8-49fc-9ce3-fbe94da44e09" />
