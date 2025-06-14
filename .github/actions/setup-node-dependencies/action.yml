@@ -26,7 +26,7 @@ runs:
       id: env-cache-key
       run: |
         # Create a hash based on NON-SECRET configuration only for security
-        CONFIG_HASH=$(echo "${DB_HOST}" | sha256sum | cut -d' ' -f1)
+        CONFIG_HASH=$(echo "${DB_HOST}-${NODE_ENV}" | sha256sum | cut -d' ' -f1)
         echo "config-hash=${CONFIG_HASH}" >> $GITHUB_OUTPUT
         echo "Generated .env cache key: ${CONFIG_HASH}"
       shell: bash
@@ -63,8 +63,10 @@ runs:
 
         # Application Configuration
         PORT=${APP_PORT}
+        NODE_ENV=${NODE_ENV}
         EOF
         echo "Created .env file with configuration"
+        echo "• NODE_ENV: ${NODE_ENV}"
         echo "• Configuration loaded securely"
       shell: bash
 

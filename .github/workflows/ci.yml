@@ -20,6 +20,7 @@ env:
   DB_NAME: ${{ secrets.DB_NAME }}
   # Application Configuration
   APP_PORT: ${{ secrets.PORT }}
+  NODE_ENV: ${{ vars.NODE_ENV }}
 
 jobs:
   # Stage 1: Install Dependencies
@@ -38,8 +39,7 @@ jobs:
     name: Linting
     runs-on: ubuntu-latest
     needs: install-dependencies
-    env:
-      NODE_ENV: development
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
