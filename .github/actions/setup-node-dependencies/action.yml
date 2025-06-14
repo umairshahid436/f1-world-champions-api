@@ -64,7 +64,7 @@ runs:
 
     - name: Install dependencies (if cache miss)
       if: steps.setup-node.outputs.cache-hit != 'true'
-      run: npm ci
+      run: npm ci --verbose
       shell: bash
 
     - name: Verify Dependency Installation
