@@ -22,6 +22,7 @@ env:
   APP_PORT: ${{ secrets.PORT }}
 
   NODE_ENV: ${{ vars.NODE_ENV }}
+  IMAGE_NAME: 'f1-world-champions-api'
 jobs:
   # Stage 1: Install Dependencies
   install-dependencies:
@@ -31,11 +32,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Setup Environment
-        id: setup
         uses: ./.github/actions/setup-environment
-      - name: Install Dependencies
-        if: steps.setup.outputs.cache-hit != 'true'
-        run: npm ci
 
   # Stage 2: Linting
   linting:
@@ -113,8 +110,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup Environment
-        uses: ./.github/actions/setup-environment
       - name: Generate .env file
         run: |
           echo "DB_HOST=${{ env.DB_HOST }}" > .env
@@ -122,39 +117,24 @@ jobs:
           echo "DB_USER=${{ env.DB_USER }}" >> .env
           echo "DB_PASSWORD=${{ env.DB_PASSWORD }}" >> .env
           echo "DB_NAME=${{ env.DB_NAME }}" >> .env
-          echo "APP_PORT=${{ env.APP_PORT }}" >> .env
+          echo "PORT=${{ env.PORT }}" >> .env
           echo "NODE_ENV=${{ env.NODE_ENV }}" >> .env
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@v3
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
-          tags: |
-            type=ref,event=pr,prefix=pr-
-            type=sha,prefix=main-,enable=${{ github.ref == 'refs/heads/main' }}
-            type=sha,prefix=develop-,enable=${{ github.ref == 'refs/heads/develop' }}
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
-          target: production
           push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          outputs: type=docker,dest=/tmp/image.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=docker,dest=/tmp/f1-api-image.tar
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: docker-image-${{github.sha}}
-          path: /tmp/f1-api-image.tar
+          name: docker-image
+          path: /tmp/image.tar
           retention-days: 1
 
   # Stage 6: Docker Publish
@@ -164,45 +144,26 @@ jobs:
     needs: [docker-build]
     if: success() && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
     steps:
-      - name: Set up Docker Build
-        uses: docker/setup-buildx-action@v3
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
         with:
-          name: docker-image-${{github.sha}}
+          name: docker-image
           path: /tmp
       - name: Load Docker image
-        run: |
-          docker load --input /tmp/f1-api-image.tar
-          docker image ls -a
+        run: docker load -i /tmp/image.tar
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/develop' }}
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-      - name: Push Docker image
+      - name: Tag and push Docker image
         run: |
-          IMAGE_ID=$(docker images --format "table {{.Repository}}:{{.Tag}}\t{{.ID}}" | grep "${{ github.event.repository.name }}" | head -1 | awk '{print $2}')
-          echo '${{ steps.meta.outputs.tags }}' | tr ',' '\n' | while read -r tag; do
-            if [ ! -z "$tag" ]; then
-              echo "Tagging and pushing: $tag"
-              docker tag $IMAGE_ID $tag
-              docker push $tag
-            fi
-          done
+          docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Image digest
+        run: echo "Image pushed successfully!"
 
   # Stage 7: Summary
   pipeline-summary:
@@ -230,4 +191,3 @@ jobs:
           security-result: ${{ needs.security.result }}
           docker-build-result: ${{ needs.docker-build.result }}
           docker-publish-result: ${{ needs.docker-publish.result }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
