@@ -29,18 +29,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Cache node_modules
-        id: cache-node-modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ github.head_ref || github.ref_name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Setup Environment
+        id: setup
+        uses: ./.github/actions/setup-environment
       - name: Install Dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        if: steps.setup.outputs.cache-hit != 'true'
         run: npm ci
 
   # Stage 2: Linting
@@ -51,17 +44,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Restore node_modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ github.head_ref || github.ref_name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
       - name: Run ESLint
-        run: npm run lint:check
+        run: npm run lint
 
   # Stage 3: Testing
   test:
@@ -74,15 +60,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Restore node_modules from cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ github.head_ref || github.ref_name }}-${{ hashFiles('**/package-lock.json') }}
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
       - name: Run tests
         run: npm run test:cov
 
@@ -100,13 +79,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
