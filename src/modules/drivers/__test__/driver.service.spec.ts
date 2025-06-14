@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DriversService } from './drivers.service';
-import { Driver } from '../../database/entities/driver.entity';
+import { DriversService } from '../drivers.service';
+import { Driver } from '../../../database/entities/driver.entity';
 import { EntityManager } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 

@@ -4,9 +4,9 @@ import { Driver } from '../../../database/entities/driver.entity';
 import { Constructor } from '../../../database/entities/constructor.entity';
 import { Season } from '../../../database/entities/season.entity';
 
-export interface TransformedData {
-  drivers: Partial<Driver>[];
-  constructors: Partial<Constructor>[];
+export interface TransformedSeasonData {
+  drivers: Driver[];
+  constructors: Constructor[];
   seasons: Season[];
 }
 
@@ -17,16 +17,20 @@ export class DataTransformationService {
   /**
    * Transform Ergast API data to database entities
    */
-  transformErgastDriverStandingsToEntities(
+  transformSeasonsApiDataToEntities(
     ergastData: ErgastDriverStanding[],
-  ): TransformedData {
+  ): TransformedSeasonData {
     const uniqueDriversMap = this.extractUniqueDrivers(ergastData);
     const drivers = Array.from(uniqueDriversMap.values());
 
     const uniqueConstructorsMap = this.extractUniqueConstructors(ergastData);
     const constructors = Array.from(uniqueConstructorsMap.values());
 
-    const seasons = this.transformSeasons(ergastData);
+    const seasons = this.transformSeasons(
+      ergastData,
+      uniqueDriversMap,
+      uniqueConstructorsMap,
+    );
 
     return {
       drivers,
@@ -36,18 +40,13 @@ export class DataTransformationService {
   }
 
   extractUniqueDrivers(ergastData: ErgastDriverStanding[]) {
-    const driversMap = new Map<string, Partial<Driver>>();
+    const driversMap = new Map<string, Driver>();
 
     for (const standing of ergastData) {
       const { Driver: driverData } = standing;
 
       if (!driversMap.has(driverData.driverId)) {
-        driversMap.set(driverData.driverId, {
-          ...driverData,
-          permanentNumber: driverData.permanentNumber
-            ? driverData.permanentNumber
-            : undefined,
-        });
+        driversMap.set(driverData.driverId, new Driver(driverData));
       }
     }
 
@@ -55,17 +54,15 @@ export class DataTransformationService {
   }
 
   extractUniqueConstructors(ergastData: ErgastDriverStanding[]) {
-    const constructorsMap = new Map<string, Partial<Constructor>>();
+    const constructorsMap = new Map<string, Constructor>();
 
     for (const standing of ergastData) {
       for (const constructorData of standing.Constructors) {
         if (!constructorsMap.has(constructorData.constructorId)) {
-          constructorsMap.set(constructorData.constructorId, {
-            constructorId: constructorData.constructorId,
-            name: constructorData.name,
-            nationality: constructorData.nationality,
-            url: constructorData.url,
-          });
+          constructorsMap.set(
+            constructorData.constructorId,
+            new Constructor(constructorData),
+          );
         }
       }
     }
@@ -73,17 +70,56 @@ export class DataTransformationService {
     return constructorsMap;
   }
 
-  private transformSeasons(ergastData: ErgastDriverStanding[]): Season[] {
-    return ergastData.map(
-      (standing) =>
-        new Season({
-          year: parseInt(standing.season),
-          points: standing.points,
-          championDriverId: standing.Driver.driverId,
-          championDriver: standing.Driver as Driver,
-          championConstructor: standing.Constructors[0] as Constructor,
-          championConstructorId: standing.Constructors[0]?.constructorId || '',
-        }),
+  assembleSeasonsWithRelations(
+    seasons: Season[],
+    drivers: Driver[],
+    constructors: Constructor[],
+  ): Season[] {
+    const driverMap = new Map(drivers.map((d) => [d.driverId, d]));
+    const constructorMap = new Map(
+      constructors.map((c) => [c.constructorId, c]),
     );
+
+    return seasons.map((season) => {
+      const championDriver = driverMap.get(season.championDriverId);
+      const championConstructor = constructorMap.get(
+        season.championConstructorId,
+      );
+
+      if (!championDriver || !championConstructor) {
+        this.logger.warn(
+          `Could not find matching driver or constructor for season ${season.year}`,
+        );
+        return season;
+      }
+
+      return {
+        ...season,
+        championDriver,
+        championConstructor,
+      };
+    });
+  }
+
+  private transformSeasons(
+    ergastData: ErgastDriverStanding[],
+    driversMap: Map<string, Driver>,
+    constructorsMap: Map<string, Constructor>,
+  ): Season[] {
+    return ergastData.map((standing) => {
+      const championDriver = driversMap.get(standing.Driver.driverId);
+      const championConstructor = constructorsMap.get(
+        standing.Constructors[0]?.constructorId,
+      );
+
+      return new Season({
+        year: parseInt(standing.season),
+        points: standing.points,
+        championDriverId: standing.Driver.driverId,
+        championConstructorId: standing.Constructors[0]?.constructorId,
+        championDriver,
+        championConstructor,
+      });
+    });
   }
 }

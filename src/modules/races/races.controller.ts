@@ -1,16 +1,16 @@
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { RacesService } from './services/races.service';
-import { Serialize } from '../../decorators/serialize.decorator';
 import { RaceDto } from './dtos/race.dto';
 import { ApiParam, ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import { Serialize } from '../../decorators/serialize.decorator';
 
 @Controller('season/:year/races')
 @ApiTags('Races')
-@Serialize(RaceDto)
 export class RacesController {
   constructor(private readonly racesService: RacesService) {}
 
   @Get('')
+  @Serialize(RaceDto)
   @ApiOperation({
     summary: 'Get season races',
     description: 'Retrieve all races and winners for a specific season',
@@ -26,7 +26,10 @@ export class RacesController {
     description:
       'List of races with winner information for the specified season',
   })
-  getSeasonRaces(@Param('year', ParseIntPipe) year: number) {
+  @ApiResponse({ status: 500, description: 'Internal server error.' })
+  getSeasonRaces(
+    @Param('year', ParseIntPipe) year: number,
+  ): Promise<RaceDto[]> {
     return this.racesService.getSeasonRaces(year);
   }
 }

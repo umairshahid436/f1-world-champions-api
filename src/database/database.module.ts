@@ -22,6 +22,7 @@ import { Constructor } from './entities/constructor.entity';
           entities: [Season, Driver, Race, Constructor],
           autoLoadEntities: true,
           synchronize: false,
+          logging: false,
         };
       },
     }),

@@ -8,6 +8,7 @@ import { ErgastModule } from '../external/ergast/ergast.module';
 import { RaceDataTransformationService } from './services/data-transformation.service';
 import { DriversModule } from '../drivers/drivers.module';
 import { SeasonsModule } from '../seasons/seasons.module';
+import { RaceRepository } from './repositories/race.repository';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { SeasonsModule } from '../seasons/seasons.module';
     SeasonsModule,
     TypeOrmModule.forFeature([Driver, Race]),
   ],
-  providers: [RacesService, RaceDataTransformationService],
+  providers: [RacesService, RaceDataTransformationService, RaceRepository],
   controllers: [RacesController],
   exports: [],
 })

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SeasonsController } from './seasons.controller';
-import { SeasonsService } from './services/seasons.service';
-import { SeasonQueryDto } from './dtos/season-query.dto';
+import { SeasonsController } from '../seasons.controller';
+import { SeasonsService } from '../services/seasons.service';
+import { SeasonQueryDto } from '../dtos/season-query.dto';
 import { ValidationPipe, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 

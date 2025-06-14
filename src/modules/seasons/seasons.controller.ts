@@ -6,7 +6,7 @@ import { SeasonQueryDto } from './dtos/season-query.dto';
 import { ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
 
 @Controller('seasons')
-@ApiTags('Seaons')
+@ApiTags('Seasons')
 @Serialize(SeasonDto)
 export class SeasonsController {
   constructor(private readonly seasonsService: SeasonsService) {}

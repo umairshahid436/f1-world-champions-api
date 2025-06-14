@@ -22,5 +22,6 @@ export default new DataSource({
   database: configService.getOrThrow('DB_NAME'),
   entities: [Season, Driver, Race, Constructor],
   synchronize: false,
-  migrations: ['dist/database/migrations/**/*.js'],
+  migrations: ['src/database/migrations/*.ts'],
+  migrationsTableName: 'migrations',
 });

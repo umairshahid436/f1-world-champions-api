@@ -1,239 +1,231 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
 import { RacesService } from '../races.service';
+import { RaceRepository } from '../../repositories/race.repository';
+import { EntityManager } from 'typeorm';
 import { ErgastService } from '../../../external/ergast/ergast.service';
 import { RaceDataTransformationService } from '../data-transformation.service';
 import { DriversService } from '../../../drivers/drivers.service';
 import { SeasonsService } from '../../../seasons/services/seasons.service';
-import { Race } from '../../../../database/entities/race.entity';
-import { Logger } from '@nestjs/common';
 import { ErgastRace } from '../../../external/ergast/ergast.interface';
 
-// Mock Data
-const MOCK_YEAR = 2023;
-const MOCK_RACES: Race[] = [
-  {
-    id: 1,
-    name: 'Bahrain Grand Prix',
-    date: '2023-03-05',
-    time: '15:00:00Z',
-    seasonYear: MOCK_YEAR,
-    driverId: '1',
-    points: '25',
-    circuitName: 'Bahrain International Circuit',
-    driver: {
-      driverId: '1',
-      givenName: 'Max',
-      familyName: 'Verstappen',
-      permanentNumber: '1',
-      code: 'VER',
-      url: '',
-      nationality: 'Dutch',
-      seasons: [],
-      races: [],
-      createdAt: new Date(),
-    },
-    season: {
-      year: MOCK_YEAR,
-      points: '25',
-      championDriverId: '1',
-      championConstructorId: '1',
-      createdAt: new Date(),
-      races: [],
-      championDriver: {
-        driverId: 'driverId',
-        givenName: 'givenName',
-        familyName: 'familyName',
-        nationality: 'nationality',
-        permanentNumber: 'permanentNumber',
-        code: 'code',
-        url: 'url',
-        createdAt: new Date(),
-        seasons: [],
-        races: [],
-      },
-      championConstructor: {
-        constructorId: 'constructorId',
-        name: 'name',
-        nationality: 'nationality',
-        url: 'url',
-        createdAt: new Date(),
-        seasons: [],
-        races: [],
-      },
-    },
-    createdAt: new Date(),
-  },
-];
+const mockRaceRepository = {
+  findRacesWithChampionFlag: jest.fn(),
+  saveInTransaction: jest.fn(),
+};
 
-const MOCK_ERGAST_RACES: ErgastRace[] = [
-  {
-    season: '2023',
-    round: '1',
-    url: 'http://en.wikipedia.org/wiki/2023_Bahrain_Grand_Prix',
-    raceName: 'Bahrain Grand Prix',
-    date: '2023-03-05',
-    time: '15:00:00Z',
-    Results: [
-      {
-        number: '1',
-        position: '1',
-        positionText: '1',
-        points: '25',
-        Driver: {
-          driverId: 'max_verstappen',
-          givenName: 'Max',
-          familyName: 'Verstappen',
-          nationality: 'Dutch',
-          permanentNumber: '1',
-          code: 'VER',
-          url: '',
-          dateOfBirth: '',
-        },
-        Constructor: {
-          constructorId: 'red_bull',
-          name: 'Red Bull Racing',
-          nationality: 'Austrian',
-          url: '',
-        },
-        grid: '1',
-        laps: '57',
-        status: 'Finished',
-        Time: { millis: '5617062', time: '1:33:56.736' },
-        FastestLap: {
-          rank: '1',
-          lap: '56',
-          Time: { time: '1:35.840' },
-          AverageSpeed: { units: 'kph', speed: '203.280' },
-        },
-      },
-    ],
-    Circuit: {
-      circuitId: 'bahrain',
-      url: '',
-      circuitName: 'Bahrain International Circuit',
-      Location: { lat: '', long: '', locality: '', country: '' },
-    },
-  },
-];
+const mockErgastService = {
+  fetchSeasonRaces: jest.fn(),
+};
+
+const mockRTransformationService = {
+  transformErgastRaceToDbEntities: jest.fn(),
+};
+
+const mockDriversService = {
+  upsertDriversWithTransaction: jest.fn(),
+};
+
+const mockSeasonsService = {
+  fetchSeasonChampionId: jest.fn(),
+};
+
+const mockEntityManager = {
+  transaction: jest.fn().mockImplementation(async (cb) => {
+    // This simulates the transaction callback
+    const manager = {}; // Mock manager if needed within the callback
+    await cb(manager);
+  }),
+};
 
 describe('RacesService', () => {
   let service: RacesService;
-  let repository: jest.Mocked<Repository<Race>>;
-  let ergastService: jest.Mocked<ErgastService>;
-  let raceDataTransformationService: jest.Mocked<RaceDataTransformationService>;
-  let seasonsService: jest.Mocked<SeasonsService>;
-  let entityManager: jest.Mocked<EntityManager>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RacesService,
-        {
-          provide: getRepositoryToken(Race),
-          useValue: { find: jest.fn() },
-        },
-        {
-          provide: EntityManager,
-          useValue: {
-            transaction: jest.fn().mockImplementation(async (callback) => {
-              const mockManager = { upsert: jest.fn() };
-              await callback(mockManager);
-            }),
-          },
-        },
-        {
-          provide: ErgastService,
-          useValue: { fetchSeasonRaces: jest.fn() },
-        },
+        { provide: RaceRepository, useValue: mockRaceRepository },
+        { provide: EntityManager, useValue: mockEntityManager },
+        { provide: ErgastService, useValue: mockErgastService },
         {
           provide: RaceDataTransformationService,
-          useValue: { transformErgastRaceToDbEntities: jest.fn() },
+          useValue: mockRTransformationService,
         },
-        {
-          provide: DriversService,
-          useValue: { upsertDriversWithTransaction: jest.fn() },
-        },
-        {
-          provide: SeasonsService,
-          useValue: { findByYear: jest.fn() },
-        },
-        {
-          provide: Logger,
-          useValue: {
-            log: jest.fn(),
-            error: jest.fn(),
-          },
-        },
+        { provide: DriversService, useValue: mockDriversService },
+        { provide: SeasonsService, useValue: mockSeasonsService },
       ],
     }).compile();
 
     service = module.get<RacesService>(RacesService);
-    repository = module.get(getRepositoryToken(Race));
-    ergastService = module.get(ErgastService);
-    raceDataTransformationService = module.get(RaceDataTransformationService);
-    seasonsService = module.get(SeasonsService);
-    entityManager = module.get(EntityManager);
-  });
 
-  afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('getSeasonRaces', () => {
-    it('should return races from the database if they exist', async () => {
-      repository.find.mockResolvedValue(MOCK_RACES);
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
 
-      const result = await service.getSeasonRaces(MOCK_YEAR);
-      expect(result).toEqual(MOCK_RACES);
-      expect(repository.find).toHaveBeenCalledWith({
-        where: { seasonYear: MOCK_YEAR },
-        relations: { driver: true },
-      });
-      expect(ergastService.fetchSeasonRaces).not.toHaveBeenCalled();
+  describe('getSeasonRaces', () => {
+    const year = 2023;
+    const mockSeason = {
+      id: '1',
+      year: 2023,
+      championDriverId: 'max_verstappen',
+    };
+    // This now represents the raw data returned by the repository query
+    const mockRawRacesFromDb = [
+      {
+        id: 'race-1',
+        name: 'Bahrain Grand Prix',
+        circuitName: 'Bahrain International Circuit',
+        date: '2023-03-05',
+        time: '15:00:00Z',
+        winnerDriver: {
+          driverId: 'max_verstappen',
+          name: 'Max Verstappen',
+          isChampion: true,
+        },
+      },
+    ];
+
+    it('should return an empty array if the season does not exist', async () => {
+      mockSeasonsService.fetchSeasonChampionId.mockResolvedValue(null);
+
+      const result = await service.getSeasonRaces(year);
+
+      expect(result).toEqual([]);
+      expect(mockSeasonsService.fetchSeasonChampionId).toHaveBeenCalledWith(
+        year,
+      );
+      expect(
+        mockRaceRepository.findRacesWithChampionFlag,
+      ).not.toHaveBeenCalled();
     });
 
-    it('should fetch, save, and return races from the API if not in the database', async () => {
-      repository.find.mockResolvedValue([]);
-      seasonsService.findByYear.mockResolvedValue(MOCK_RACES[0].season);
-      ergastService.fetchSeasonRaces.mockResolvedValue(MOCK_ERGAST_RACES);
-      raceDataTransformationService.transformErgastRaceToDbEntities.mockReturnValue(
-        {
-          drivers: [],
-          races: MOCK_RACES,
-        },
+    it('should return races from the database if they exist', async () => {
+      mockSeasonsService.fetchSeasonChampionId.mockResolvedValue(mockSeason);
+      mockRaceRepository.findRacesWithChampionFlag.mockResolvedValue(
+        mockRawRacesFromDb,
       );
-      const result = await service.getSeasonRaces(MOCK_YEAR);
-      expect(ergastService.fetchSeasonRaces).toHaveBeenCalledWith({
-        year: MOCK_YEAR,
+
+      const result = await service.getSeasonRaces(year);
+
+      expect(result).toEqual(mockRawRacesFromDb);
+      expect(mockSeasonsService.fetchSeasonChampionId).toHaveBeenCalledWith(
+        year,
+      );
+      expect(mockRaceRepository.findRacesWithChampionFlag).toHaveBeenCalledWith(
+        year,
+      );
+      expect(mockErgastService.fetchSeasonRaces).not.toHaveBeenCalled();
+    });
+
+    it('should fetch, save, and return races if they are not in the database', async () => {
+      const mockErgastRaces: ErgastRace[] = [
+        {
+          season: '2023',
+          round: '1',
+          url: 'http://en.wikipedia.org/wiki/2023_Bahrain_Grand_Prix',
+          raceName: 'Bahrain Grand Prix',
+          Circuit: {
+            circuitId: 'bahrain',
+            url: 'http://en.wikipedia.org/wiki/Bahrain_International_Circuit',
+            circuitName: 'Bahrain International Circuit',
+            Location: {
+              lat: '26.0325',
+              long: '50.5106',
+              locality: 'Sakhir',
+              country: 'Bahrain',
+            },
+          },
+          Results: [
+            {
+              number: '1',
+              position: '1',
+              positionText: '1',
+              points: '25',
+              grid: '1',
+              laps: '57',
+              status: 'Finished',
+              Driver: {
+                driverId: 'max_verstappen',
+                code: 'VER',
+                url: 'http://en.wikipedia.org/wiki/Max_Verstappen',
+                givenName: 'Max',
+                familyName: 'Verstappen',
+                dateOfBirth: '1997-09-30',
+                nationality: 'Dutch',
+              },
+              Constructor: {
+                constructorId: 'red_bull',
+                url: 'http://en.wikipedia.org/wiki/Red_Bull_Racing',
+                name: 'Red Bull',
+                nationality: 'Austrian',
+              },
+            },
+          ],
+          date: '2023-03-05',
+          time: '15:00:00Z',
+        },
+      ];
+      const mockTransformedData = { drivers: [], races: [] };
+
+      // First call to DB returns nothing
+      mockSeasonsService.fetchSeasonChampionId.mockResolvedValue(mockSeason);
+      mockRaceRepository.findRacesWithChampionFlag.mockResolvedValueOnce([]);
+
+      // API call returns data
+      mockErgastService.fetchSeasonRaces.mockResolvedValue(mockErgastRaces);
+      mockRTransformationService.transformErgastRaceToDbEntities.mockReturnValue(
+        mockTransformedData,
+      );
+
+      // Second call to DB returns the final data
+      mockRaceRepository.findRacesWithChampionFlag.mockResolvedValueOnce(
+        mockRawRacesFromDb,
+      );
+
+      const result = await service.getSeasonRaces(year);
+
+      expect(result).toEqual(mockRawRacesFromDb);
+      expect(mockErgastService.fetchSeasonRaces).toHaveBeenCalledWith({
+        year,
         positionToFilterResult: 1,
       });
-      expect(entityManager.transaction).toHaveBeenCalled();
-      expect(result).toEqual(MOCK_RACES);
+      expect(
+        mockRTransformationService.transformErgastRaceToDbEntities,
+      ).toHaveBeenCalledWith(mockErgastRaces);
+      expect(mockEntityManager.transaction).toHaveBeenCalled();
+      expect(
+        mockDriversService.upsertDriversWithTransaction,
+      ).toHaveBeenCalled();
+      expect(mockRaceRepository.saveInTransaction).toHaveBeenCalled();
+      expect(
+        mockRaceRepository.findRacesWithChampionFlag,
+      ).toHaveBeenCalledTimes(2);
     });
 
-    it('should throw an error if the season does not exist when fetching from API', async () => {
-      repository.find.mockResolvedValue([]);
-      seasonsService.findByYear.mockResolvedValue(null);
-      ergastService.fetchSeasonRaces.mockResolvedValue(MOCK_ERGAST_RACES);
-      await expect(service.getSeasonRaces(MOCK_YEAR)).rejects.toThrow(
-        'Something went wrong while getting races',
-      );
-    });
+    it('should return an empty array if no races are found in the API', async () => {
+      mockSeasonsService.fetchSeasonChampionId.mockResolvedValue(mockSeason);
+      mockRaceRepository.findRacesWithChampionFlag.mockResolvedValueOnce([]);
+      mockErgastService.fetchSeasonRaces.mockResolvedValue([]);
 
-    it('should return an empty array if no races are found in DB or API', async () => {
-      repository.find.mockResolvedValue([]);
-      ergastService.fetchSeasonRaces.mockResolvedValue([]);
-      const result = await service.getSeasonRaces(MOCK_YEAR);
+      const result = await service.getSeasonRaces(year);
+
       expect(result).toEqual([]);
-      expect(entityManager.transaction).not.toHaveBeenCalled();
+      expect(mockErgastService.fetchSeasonRaces).toHaveBeenCalledWith({
+        year,
+        positionToFilterResult: 1,
+      });
+      expect(mockEntityManager.transaction).not.toHaveBeenCalled();
     });
 
-    it('should throw an error if fetching from the database fails', async () => {
-      const dbError = new Error('Database connection failed');
-      repository.find.mockRejectedValue(dbError);
-      await expect(service.getSeasonRaces(MOCK_YEAR)).rejects.toThrow(
+    it('should throw a generic error if something goes wrong', async () => {
+      mockSeasonsService.fetchSeasonChampionId.mockRejectedValue(
+        new Error('DB error'),
+      );
+
+      await expect(service.getSeasonRaces(year)).rejects.toThrow(
         'Something went wrong while getting races',
       );
     });

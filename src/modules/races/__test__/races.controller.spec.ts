@@ -1,28 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RacesController } from './races.controller';
-import { RacesService } from './services/races.service';
+import { RacesController } from '../races.controller';
+import { RacesService } from '../services/races.service';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-
-const MOCK_RACES = [
-  {
-    id: '1',
-    name: 'Bahrain Grand Prix',
-    circuitName: 'Bahrain International Circuit',
-    date: '2023-03-05',
-    time: '15:00:00Z',
-    driver: {
-      driverId: 'max_verstappen',
-      givenName: 'Max',
-      familyName: 'Verstappen',
-    },
-  },
-];
 
 // Mock data that matches the structure after serialization by RaceDto
 const MOCK_SERIALIZED_RACES = [
   {
-    id: '1',
     name: 'Bahrain Grand Prix',
     circuitName: 'Bahrain International Circuit',
     date: '2023-03-05',
@@ -45,7 +29,7 @@ describe('RacesController', () => {
         {
           provide: RacesService,
           useValue: {
-            getSeasonRaces: jest.fn().mockResolvedValue(MOCK_RACES),
+            getSeasonRaces: jest.fn().mockResolvedValue(MOCK_SERIALIZED_RACES),
           },
         },
       ],

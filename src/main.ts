@@ -1,24 +1,15 @@
 import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './modules/app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerConfig } from './config/swagger.config';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
-  const port = process.env.PORT ?? 3000;
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('APP_PORT') ?? 3000;
 
-  const options = new DocumentBuilder()
-    .setTitle('Your API Title')
-    .setDescription('Your API description')
-    .setVersion('1.0')
-    .addServer(`http://localhost:${port}/`, 'Local environment')
-    .addTag('Your API Tag')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('api-docs', app, document);
   // Set global prefix for all routes
   app.setGlobalPrefix('api');
 
@@ -34,7 +25,7 @@ async function bootstrap() {
     }),
   );
   // Setup Swagger documentation
-  SwaggerConfig.setup(app);
+  SwaggerConfig.setup(app, configService);
 
   await app.listen(port);
   logger.log(`Swagger UI: http://localhost:${port}/api-docs`);
