@@ -47,7 +47,7 @@ jobs:
 
       - name: Upload npm logs as artifact
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: npm-debug-logs
           path: /home/runner/.npm/_logs/*.log
