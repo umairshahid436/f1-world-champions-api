@@ -22,56 +22,50 @@ env:
   APP_PORT: ${{ secrets.PORT }}
 
 jobs:
-  # Stage 1: Install Dependencies
-  install-dependencies:
-    name: Install Dependencies
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Setup
-        uses: ./.github/actions/setup-node-dependencies
-
-  # Stage 2: Linting
+  # Stage 1: Linting
   linting:
     name: Linting
     runs-on: ubuntu-latest
-    needs: install-dependencies
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Setup
-        uses: ./.github/actions/setup-node-dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run ESLint
-        run: npm run lint
+        run: npm run lint:check
 
-  # Stage 3: Testing
+  # Stage 2: Testing
   test:
     name: Tests
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
       checks: write
-    needs: install-dependencies
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup-node-dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run tests
         run: npm run test:cov
 
-  # Stage 4: Security
+  # Stage 3: Security
   security:
     name: Security
     runs-on: ubuntu-latest
-    needs: [install-dependencies, linting, test]
+    needs: [linting, test]
     permissions:
       security-events: write
       actions: read
@@ -82,11 +76,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Setup
-        uses: ./.github/actions/setup-node-dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          create-env: 'false'
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -111,20 +107,24 @@ jobs:
             exit 1
           fi
 
-  # Stage 5: Docker Build
+  # Stage 4: Docker Build
   docker-build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [install-dependencies, linting, test, security]
+    needs: [linting, test, security]
     env:
       NODE_ENV: production
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ./.github/actions/setup-node-dependencies
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
 
       - name: Set up Docker Build
         uses: docker/setup-buildx-action@v3
@@ -166,7 +166,7 @@ jobs:
           path: /tmp/f1-api-image.tar
           retention-days: 1
 
-  # Stage 6: Docker Publish
+  # Stage 5: Docker Publish
   docker-publish:
     name: Docker Publish
     runs-on: ubuntu-latest
@@ -225,19 +225,11 @@ jobs:
             fi
           done
 
-  # Stage 7: Summary
+  # Stage 6: Summary
   pipeline-summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs:
-      [
-        install-dependencies,
-        linting,
-        test,
-        security,
-        docker-build,
-        docker-publish,
-      ]
+    needs: [linting, test, security, docker-build, docker-publish]
     if: always()
 
     steps:
@@ -247,14 +239,9 @@ jobs:
       - name: Generate CI Summary
         uses: ./.github/actions/pipeline-summary
         with:
-          install-dependencies-result: ${{ needs.install-dependencies.result }}
-          linting-result: ${{ needs.linting.result }}
-          test-result: ${{ needs.test.result }}
-          security-result: ${{ needs.security.result }}
-          docker-build-result: ${{ needs.docker-build.result }}
-          docker-publish-result: ${{ needs.docker-publish.result }}
-          github-event-name: ${{ github.event_name }}
-          github-event-number: ${{ github.event.number }}
-          github-base-ref: ${{ github.base_ref }}
-          github-ref-name: ${{ github.ref_name }}
-          default-branch: ${{ github.event.repository.default_branch }}
+          linting-status: ${{ needs.linting.result }}
+          test-status: ${{ needs.test.result }}
+          security-status: ${{ needs.security.result }}
+          docker-build-status: ${{ needs.docker-build.result }}
+          docker-publish-status: ${{ needs.docker-publish.result }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
