@@ -11,7 +11,6 @@ Navigate to **[http://localhost:3000/api-docs](http://localhost:3000/api-docs)**
 From this interface, you can:
 
 - View all available endpoints.
-- See request and response schemas for each endpoint.
 - Execute requests directly from your browser to test the API.
 
 ![Swagger UI](![gif-gif](https://github.com/user-attachments/assets/79942edf-607c-4eee-8482-a6b8de2ddb35))
@@ -76,7 +75,8 @@ Create a `.env` file in the root directory. You can do this by copying the examp
 
 ```bash
 # Application Configuration
-APP_PORT=3000
+PORT=3000
+NODE_ENV=development
 
 # PostgreSQL Database Configuration
 DB_HOST=localhost
@@ -88,6 +88,7 @@ DB_NAME=****
 # PgAdmin Configuration
 PGADMIN_EMAIL=****
 PGADMIN_PASSWORD=****
+PGADMIN_PORT=**
 ```
 
 **Environment Variables Explained:**
@@ -167,7 +168,7 @@ This is the recommended way to run the application for a consistent development 
     Run the following command from the project root. This will build the Docker image and start all the services.
 
     ```bash
-    docker-compose -f infrastructure/docker-compose.yml up --build -d
+      docker-compose --env-file .env -f infrastructure/docker-compose.yml up --build -d
     ```
 
 3.  **Run Database Migrations**
@@ -175,7 +176,7 @@ This is the recommended way to run the application for a consistent development 
     The first time you start the application, you must run the database migrations to set up the database schema.
 
     ```bash
-    docker-compose -f infrastructure/docker-compose.yml exec world-champions-api npm run migration:run
+    docker-compose --env-file .env -f infrastructure/docker-compose.yml exec world-champions-api npm run migration:run
     ```
 
 4.  **Stopping the Application**
@@ -231,3 +232,13 @@ Before any merge request can be approved and merged, all pipeline stages in our 
 7.  **Summary**: Provides a summary of the pipeline run.
    
 <img width="1420" alt="Screenshot 2025-06-14 at 21 16 31" src="https://github.com/user-attachments/assets/9e38d2e1-43a8-49fc-9ce3-fbe94da44e09" />
+
+### Docker Image
+The official Docker image for this project is hosted on Docker Hub. You can pull it using the following command:
+
+```bash
+docker pull umairshahidnl/f1-world-champions-api:latest
+```
+
+The image is available at the following link:
+[https://hub.docker.com/r/umairshahidnl/f1-world-champions-api/tags](https://hub.docker.com/r/umairshahidnl/f1-world-champions-api/tags)
