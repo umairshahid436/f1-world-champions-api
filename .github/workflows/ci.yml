@@ -44,11 +44,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup
-        uses: ./.github/actions/setup-node-dependencies
+      - name: 🔧 Setup Node.js 20.x
+        id: setup-node
+        uses: actions/setup-node@v4
         with:
-          create-env: 'false'
-
+          node-version: '20.x'
+          cache: 'npm'
+      - name: Install dependencies (if cache miss)
+        run: npm ci --verbose
+        shell: bash
       - name: Run ESLint
         run: npm run lint
 
