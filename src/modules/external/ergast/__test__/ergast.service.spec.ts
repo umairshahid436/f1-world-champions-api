@@ -116,17 +116,21 @@ describe('ErgastService', () => {
       expect(result[0].position).toBe('1');
     });
 
-    it('should throw error if any year fails', async () => {
+    it('should handle failed requests gracefully', async () => {
       jest
         .spyOn(httpClientService, 'makeRequest')
-        .mockRejectedValueOnce(new Error('API request failed'));
+        .mockResolvedValueOnce(mockDriverStandings2023) // First year succeeds
+        .mockRejectedValueOnce(new Error('API request failed')) // Second year fails
+        .mockResolvedValueOnce(mockDriverStandings2024); // Third year succeeds
 
-      await expect(
-        ergastService.fetchSeasonChampions({
-          fromYear: 2023,
-          toYear: 2023,
-        }),
-      ).rejects.toThrow('API request failed');
+      const result = await ergastService.fetchSeasonChampions({
+        fromYear: 2023,
+        toYear: 2025,
+      });
+
+      expect(result.length).toBeGreaterThan(0);
+      expect(result.some((r) => r.season === '2023')).toBeTruthy();
+      expect(result.some((r) => r.season === '2024')).toBeTruthy();
     });
   });
 

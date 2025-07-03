@@ -120,11 +120,11 @@ runs:
             # Add Docker status for post-merge
             if [[ "${{ inputs.docker-publish-result }}" == "success" ]]; then
               echo "" >> $GITHUB_STEP_SUMMARY
-              echo "🐳 **Docker Image Published Successfully**" >> $GITHUB_STEP_SUMMARY
+              echo "**Docker Image Published Successfully**" >> $GITHUB_STEP_SUMMARY
               echo "Pull the latest image: \`docker pull your-username/f1-world-champions-api:${{ inputs.github-ref-name }}\`" >> $GITHUB_STEP_SUMMARY
             elif [[ "${{ inputs.docker-publish-result }}" == "failure" ]]; then
               echo "" >> $GITHUB_STEP_SUMMARY
-              echo "⚠️ **Docker Publish Failed** - Check logs for details" >> $GITHUB_STEP_SUMMARY
+              echo " **Docker Publish Failed** - Check logs for details" >> $GITHUB_STEP_SUMMARY
             fi
           fi
         else

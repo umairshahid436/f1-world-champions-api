@@ -3,17 +3,6 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { AxiosRequestConfig, AxiosError } from 'axios';
 
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
-
-export interface RequestOptions {
-  url: string;
-  method: HttpMethod;
-  data?: unknown;
-  params?: Record<string, string | number>;
-  headers?: Record<string, string>;
-  context: string;
-}
-
 /**
  * Configuration for retry mechanism
  */
