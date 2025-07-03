@@ -1,15 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpService } from '@nestjs/axios';
-import { of } from 'rxjs';
-import { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { of, throwError } from 'rxjs';
+import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { HttpClientService } from './http.client.service';
 
 describe('HttpClientService', () => {
   let service: HttpClientService;
   let httpService: HttpService;
-  let httpServiceRequestSpy: jest.SpyInstance;
 
-  // Mock timers to control retry delays
   beforeAll(() => {
     jest.useFakeTimers();
   });
@@ -33,7 +31,6 @@ describe('HttpClientService', () => {
 
     service = module.get<HttpClientService>(HttpClientService);
     httpService = module.get<HttpService>(HttpService);
-    httpServiceRequestSpy = jest.spyOn(httpService, 'request');
   });
 
   afterEach(() => {
@@ -53,7 +50,7 @@ describe('HttpClientService', () => {
       headers: {},
       config: {} as InternalAxiosRequestConfig,
     };
-    httpServiceRequestSpy.mockReturnValue(of(mockResponse));
+    (httpService.request as jest.Mock).mockReturnValue(of(mockResponse));
 
     const result = await service.makeRequest({
       url: '/test',
@@ -62,6 +59,22 @@ describe('HttpClientService', () => {
     });
 
     expect(result).toEqual('test');
-    expect(httpServiceRequestSpy).toHaveBeenCalledTimes(1);
+    expect(httpService.request).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not retry on non-retryable status code', async () => {
+    const axiosError = new AxiosError('Bad Request');
+    (httpService.request as jest.Mock).mockReturnValue(
+      throwError(() => axiosError),
+    );
+
+    const config = {
+      url: '/test',
+      method: 'GET',
+      context: 'test',
+    };
+
+    await expect(service.makeRequest(config)).rejects.toThrow('Bad Request');
+    expect(httpService.request).toHaveBeenCalledTimes(1);
   });
 });

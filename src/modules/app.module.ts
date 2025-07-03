@@ -22,7 +22,7 @@ import { DataSource } from 'typeorm';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.local', '.env'],
+      envFilePath: ['.env'],
     }),
     DatabaseModule,
     HealthModule,
@@ -35,7 +35,8 @@ import { DataSource } from 'typeorm';
     {
       provide: APP_PIPE,
       useValue: new ValidationPipe({
-        whitelist: true,
+        transform: true,
+        forbidNonWhitelisted: true,
         exceptionFactory: (errors) => {
           const validationErrors = formatValidationErrors(errors);
           return new BadRequestException({

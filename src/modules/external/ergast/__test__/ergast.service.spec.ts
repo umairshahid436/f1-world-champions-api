@@ -37,10 +37,9 @@ describe('ErgastService', () => {
 
   describe('fetchDriverStandings', () => {
     it('should fetch driver standings successfully', async () => {
-      jest
-        .spyOn(httpClientService, 'makeRequest')
-        .mockResolvedValue(mockDriverStandings2023);
-
+      (httpClientService.makeRequest as jest.Mock).mockResolvedValue(
+        mockDriverStandings2023,
+      );
       const result = await ergastService.fetchDriverStandings(2023);
 
       expect(result).toHaveLength(1);
@@ -49,9 +48,9 @@ describe('ErgastService', () => {
     });
 
     it('should filter driver standings by position', async () => {
-      jest
-        .spyOn(httpClientService, 'makeRequest')
-        .mockResolvedValue(mockDriverStandings2023);
+      (httpClientService.makeRequest as jest.Mock).mockResolvedValue(
+        mockDriverStandings2023,
+      );
 
       const result = await ergastService.fetchDriverStandings(2023, 1);
 
@@ -60,7 +59,7 @@ describe('ErgastService', () => {
     });
 
     it('should handle empty response gracefully', async () => {
-      jest.spyOn(httpClientService, 'makeRequest').mockResolvedValue({
+      (httpClientService.makeRequest as jest.Mock).mockResolvedValue({
         MRData: {
           StandingsTable: { StandingsLists: [] },
         },
@@ -72,10 +71,9 @@ describe('ErgastService', () => {
     });
 
     it('should throw error on API failure', async () => {
-      jest
-        .spyOn(httpClientService, 'makeRequest')
-        .mockRejectedValue(new Error('API request failed'));
-
+      (httpClientService.makeRequest as jest.Mock).mockRejectedValue(
+        new Error('API request failed'),
+      );
       await expect(ergastService.fetchDriverStandings(2023)).rejects.toThrow(
         'API request failed',
       );
@@ -84,11 +82,9 @@ describe('ErgastService', () => {
 
   describe('fetchSeasonChampions', () => {
     it('should fetch champions from multiple years successfully', async () => {
-      jest
-        .spyOn(httpClientService, 'makeRequest')
+      (httpClientService.makeRequest as jest.Mock)
         .mockResolvedValueOnce(mockDriverStandings2023)
         .mockResolvedValueOnce(mockDriverStandings2024);
-
       const result = await ergastService.fetchSeasonChampions({
         fromYear: 2023,
         toYear: 2024,
@@ -102,10 +98,9 @@ describe('ErgastService', () => {
     });
 
     it('should filter champions by position', async () => {
-      jest
-        .spyOn(httpClientService, 'makeRequest')
-        .mockResolvedValue(mockDriverStandings2023);
-
+      (httpClientService.makeRequest as jest.Mock).mockResolvedValue(
+        mockDriverStandings2023,
+      );
       const result = await ergastService.fetchSeasonChampions({
         fromYear: 2023,
         toYear: 2023,
@@ -116,24 +111,25 @@ describe('ErgastService', () => {
       expect(result[0].position).toBe('1');
     });
 
-    it('should throw error if any year fails', async () => {
-      jest
-        .spyOn(httpClientService, 'makeRequest')
-        .mockRejectedValueOnce(new Error('API request failed'));
+    it('should handle failed requests gracefully', async () => {
+      (httpClientService.makeRequest as jest.Mock)
+        .mockResolvedValueOnce(mockDriverStandings2023) // First year succeeds
+        .mockRejectedValueOnce(new Error('API request failed')) // Second year fails
+        .mockResolvedValueOnce(mockDriverStandings2024);
+      const result = await ergastService.fetchSeasonChampions({
+        fromYear: 2023,
+        toYear: 2025,
+      });
 
-      await expect(
-        ergastService.fetchSeasonChampions({
-          fromYear: 2023,
-          toYear: 2023,
-        }),
-      ).rejects.toThrow('API request failed');
+      expect(result.length).toBeGreaterThan(0);
+      expect(result.some((r) => r.season === '2023')).toBeTruthy();
+      expect(result.some((r) => r.season === '2024')).toBeTruthy();
     });
   });
 
   describe('fetchSeasonRaces', () => {
     it('should fetch races successfully with pagination', async () => {
-      jest
-        .spyOn(httpClientService, 'makeRequest')
+      (httpClientService.makeRequest as jest.Mock)
         .mockResolvedValueOnce({
           ...mockRaceResults2023,
           MRData: {
@@ -168,9 +164,9 @@ describe('ErgastService', () => {
     });
 
     it('should filter races by position correctly', async () => {
-      jest
-        .spyOn(httpClientService, 'makeRequest')
-        .mockResolvedValue(mockRaceResults2023);
+      (httpClientService.makeRequest as jest.Mock).mockResolvedValue(
+        mockRaceResults2023,
+      );
 
       const result = await ergastService.fetchSeasonRaces({
         year: 2023,
@@ -182,12 +178,11 @@ describe('ErgastService', () => {
     });
 
     it('should handle empty response', async () => {
-      jest.spyOn(httpClientService, 'makeRequest').mockResolvedValue({
+      (httpClientService.makeRequest as jest.Mock).mockResolvedValue({
         MRData: {
           RaceTable: { Races: [] },
         },
       });
-
       const result = await ergastService.fetchSeasonRaces({
         year: 2023,
       });
@@ -196,10 +191,9 @@ describe('ErgastService', () => {
     });
 
     it('should throw error on API failure', async () => {
-      jest
-        .spyOn(httpClientService, 'makeRequest')
-        .mockRejectedValue(new Error('API request failed'));
-
+      (httpClientService.makeRequest as jest.Mock).mockRejectedValue(
+        new Error('API request failed'),
+      );
       await expect(
         ergastService.fetchSeasonRaces({
           year: 2023,

@@ -24,7 +24,9 @@ services:
 
   # F1 World Champions API
   world-champions-api:
-    image: umairshahidnl/f1-world-champions-api:dev
+    # image: umairshahidnl/f1-world-champions-api:dev
+    build:
+      context: ../
     container_name: world-champions-api
     depends_on:
       postgres:

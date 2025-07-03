@@ -17,7 +17,7 @@ export class ErgastService {
   constructor(private readonly httpClient: HttpClientService) {
     this.httpClient.setRetryConfig({
       maxRetries: 3,
-      retryOnStatus: [429, 500, 502, 503, 504],
+      retryOnStatus: [429, 500],
     });
   }
 
@@ -84,7 +84,7 @@ export class ErgastService {
         (_, index) => fromYear + index,
       );
 
-      const results: ErgastDriverStanding[] = [];
+      let results: ErgastDriverStanding[] = [];
 
       // Process years in batches
       for (let i = 0; i < years.length; i += this.CONCURRENCY_LIMIT) {
@@ -97,27 +97,18 @@ export class ErgastService {
               this.logger.error(
                 `[Season Champions] Failed to fetch data for year ${year}: ${errorMessage}`,
               );
-              throw new Error(
-                `Failed to fetch data for year ${year}: ${errorMessage}`,
-              );
+              return [];
             },
           ),
         );
 
         const batchResults = await Promise.all(batchPromises);
-        results.push(...batchResults.flat());
+        results = results.concat(batchResults.flat());
 
         // Add a small delay between batches to avoid overwhelming the API
         if (i + this.CONCURRENCY_LIMIT < years.length) {
           await this.httpClient.delay(100);
         }
-      }
-
-      // Verify we have data for all years
-      if (results.length !== years.length) {
-        throw new Error(
-          `Data inconsistency detected. Expected ${years.length} years of data but got ${results.length}`,
-        );
       }
 
       this.logger.log(

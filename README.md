@@ -16,9 +16,8 @@ From this interface, you can:
 
 - View all available endpoints.
 - Execute requests directly from your browser to test the API.
-  
-![gif-gif](https://github.com/user-attachments/assets/868edaaf-4e56-4482-8a7c-0b9166d877fa)
 
+![gif-gif](https://github.com/user-attachments/assets/868edaaf-4e56-4482-8a7c-0b9166d877fa)
 
 ## Technology Stack
 
@@ -98,7 +97,7 @@ PGADMIN_PORT=**
 
 **Environment Variables Explained:**
 
-- `APP_PORT`: The port the NestJS application will run on.
+- `PORT`: The port the NestJS application will run on.
 - `DB_HOST`: The hostname of your PostgreSQL database server.
 - `DB_PORT`: The port your PostgreSQL server is listening on.
 - `DB_USER`: The username for connecting to the database.
@@ -226,30 +225,29 @@ Before any merge request can be approved and merged, all pipeline stages in our 
 ### Pipeline Stages
 
 1.  **Install Dependencies**:
-      - Installs all required packages.
+    - Installs all required packages.
 2.  **Linting**:
-      -  Runs `ESLint` to ensure code style and quality are maintained.
+    - Runs `ESLint` to ensure code style and quality are maintained.
 3.  **Testing**:
-      - Executes the entire test suite (`unit` and integration) to prevent regressions.
-      - Coverage threshold must be maintained (minimum 70%)
+
+    - Executes the entire test suite (`unit` and integration) to prevent regressions.
+    - Coverage threshold must be maintained (minimum 70%)
 
     ![Screenshot 2025-06-14 at 20 42 16](https://github.com/user-attachments/assets/65440fc2-0dd6-49a7-b5a1-616171dd029d)
 
 4.  **Security**:
-     - Performs a `CodeQL` analysis to scan for common security vulnerabilities.
-       
+    - Performs a `CodeQL` analysis to scan for common security vulnerabilities.
 5.  **Build**:
-     - Creates a build (docker) to ensure the application compiles correctly.
-       
+    - Creates a build (docker) to ensure the application compiles correctly.
 6.  **Publish**:
-      - Publish a Docker image.
-        
+    - Publish a Docker image.
 7.  **Summary**:
-      - Provides a summary of the pipeline run.
-   
+    - Provides a summary of the pipeline run.
+
 <img width="1420" alt="Screenshot 2025-06-14 at 21 16 31" src="https://github.com/user-attachments/assets/9e38d2e1-43a8-49fc-9ce3-fbe94da44e09" />
 
 ### Docker Image
+
 The official Docker image for this project is hosted on Docker Hub. You can pull it using the following command:
 
 ```bash

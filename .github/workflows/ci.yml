@@ -19,7 +19,7 @@ env:
   DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
   DB_NAME: ${{ secrets.DB_NAME }}
   # Application Configuration
-  APP_PORT: ${{ secrets.PORT }}
+  PORT: ${{ secrets.PORT }}
 
   NODE_ENV: ${{ vars.NODE_ENV }}
   IMAGE_NAME: 'f1-world-champions-api'
@@ -52,9 +52,7 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     needs: install-dependencies
-    permissions:
-      pull-requests: write
-      checks: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -142,7 +140,7 @@ jobs:
     name: Docker Publish
     runs-on: ubuntu-latest
     needs: [docker-build]
-    if: success() && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
+    if: success() && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     steps:
       - name: Download Docker image artifact
         uses: actions/download-artifact@v4
@@ -157,10 +155,11 @@ jobs:
           registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Tag and push Docker image
+      - name: Push Docker image
         run: |
-          docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
+          BRANCH_NAME=${{github.ref_name}}
+          docker tag ${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${BRANCH_NAME}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${BRANCH_NAME}
 
       - name: Image digest
         run: echo "Image pushed successfully!"
@@ -191,3 +190,8 @@ jobs:
           security-result: ${{ needs.security.result }}
           docker-build-result: ${{ needs.docker-build.result }}
           docker-publish-result: ${{ needs.docker-publish.result }}
+          github-event-name: ${{ github.event_name }}
+          github-event-number: ${{ github.event.number }}
+          github-base-ref: ${{ github.base_ref }}
+          github-ref-name: ${{ github.ref_name }}
+          default-branch: ${{ github.base_ref }}

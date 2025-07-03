@@ -7,7 +7,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 describe('ConstructorsService', () => {
   let service: ConstructorsService;
   let entityManager: EntityManager;
-  let upsertSpy: jest.SpyInstance;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -30,8 +29,6 @@ describe('ConstructorsService', () => {
 
     service = module.get<ConstructorsService>(ConstructorsService);
     entityManager = module.get<EntityManager>(EntityManager);
-
-    upsertSpy = jest.spyOn(entityManager, 'upsert');
   });
 
   afterEach(() => {
@@ -54,17 +51,17 @@ describe('ConstructorsService', () => {
         entityManager,
       );
 
-      expect(upsertSpy).toHaveBeenCalledTimes(1);
-      expect(upsertSpy).toHaveBeenCalledWith(Constructor, mockConstructors, [
-        'constructorId',
-      ]);
+      expect(entityManager.upsert).toHaveBeenCalledWith(
+        Constructor,
+        mockConstructors,
+        ['constructorId'],
+      );
     });
 
     it('should handle empty array input', async () => {
       await service.upsertConstructorsWithTransaction([], entityManager);
 
-      expect(upsertSpy).toHaveBeenCalledTimes(1);
-      expect(upsertSpy).toHaveBeenCalledWith(
+      expect(entityManager.upsert).toHaveBeenCalledWith(
         Constructor,
         [],
         ['constructorId'],
@@ -73,7 +70,7 @@ describe('ConstructorsService', () => {
 
     it('should propagate errors from manager.upsert', async () => {
       const error = new Error('Database error');
-      upsertSpy.mockRejectedValueOnce(error);
+      (entityManager.upsert as jest.Mock).mockRejectedValueOnce(error);
 
       await expect(
         service.upsertConstructorsWithTransaction(

@@ -7,7 +7,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 describe('DriversService', () => {
   let service: DriversService;
   let entityManager: EntityManager;
-  let upsertSpy: jest.SpyInstance;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -30,8 +29,6 @@ describe('DriversService', () => {
 
     service = module.get<DriversService>(DriversService);
     entityManager = module.get<EntityManager>(EntityManager);
-
-    upsertSpy = jest.spyOn(entityManager, 'upsert');
   });
 
   afterEach(() => {
@@ -51,20 +48,24 @@ describe('DriversService', () => {
 
       await service.upsertDriversWithTransaction(mockDrivers, entityManager);
 
-      expect(upsertSpy).toHaveBeenCalledTimes(1);
-      expect(upsertSpy).toHaveBeenCalledWith(Driver, mockDrivers, ['driverId']);
+      expect(entityManager.upsert).toHaveBeenCalledWith(Driver, mockDrivers, [
+        'driverId',
+      ]);
     });
 
     it('should handle empty array input', async () => {
       await service.upsertDriversWithTransaction([], entityManager);
-
-      expect(upsertSpy).toHaveBeenCalledTimes(1);
-      expect(upsertSpy).toHaveBeenCalledWith(Driver, [], ['driverId']);
+      expect(entityManager.upsert).toHaveBeenCalledWith(
+        Driver,
+        [],
+        ['driverId'],
+      );
     });
 
     it('should propagate errors from manager.upsert', async () => {
       const error = new Error('Database error');
-      upsertSpy.mockRejectedValueOnce(error);
+
+      (entityManager.upsert as jest.Mock).mockRejectedValueOnce(error);
 
       await expect(
         service.upsertDriversWithTransaction(

@@ -1,17 +1,8 @@
-import { INestApplication, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export class SwaggerConfig {
-  private static readonly logger = new Logger('SwaggerConfig');
-
-  static setup(app: INestApplication, configService: ConfigService): void {
-    const port = configService.get<number>('APP_PORT') ?? 3000;
-    const appUrl = configService.get<string>(
-      'APP_URL',
-      `http://localhost:${port}`,
-    );
-
+  static setup(app: INestApplication, appUrl: string): void {
     const options = new DocumentBuilder()
       .setTitle('F1 World Champions API')
       .setDescription(

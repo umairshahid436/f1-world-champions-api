@@ -9,7 +9,14 @@ describe('HealthController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
-      providers: [HealthService],
+      providers: [
+        {
+          provide: HealthService,
+          useValue: {
+            getHealthStatus: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     controller = module.get<HealthController>(HealthController);
@@ -29,8 +36,7 @@ describe('HealthController', () => {
         version: '1.0.0',
       };
 
-      jest.spyOn(service, 'getHealthStatus').mockReturnValue(mockHealthStatus);
-
+      (service.getHealthStatus as jest.Mock).mockReturnValue(mockHealthStatus);
       const result = controller.checkHealth();
 
       expect(result).toEqual(mockHealthStatus);
