@@ -109,9 +109,10 @@ describe('SeasonsController', () => {
 
     it('should handle service errors gracefully', async () => {
       const errorMessage = 'Internal Server Error';
-      jest
-        .spyOn(seasonsService, 'getSeasonsChampions')
-        .mockRejectedValue(new Error(errorMessage));
+
+      (seasonsService.getSeasonsChampions as jest.Mock).mockRejectedValue(
+        new Error(errorMessage),
+      );
 
       await request(app.getHttpServer())
         .get('/seasons')
