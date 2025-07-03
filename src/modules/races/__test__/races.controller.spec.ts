@@ -67,9 +67,9 @@ describe('RacesController', () => {
     it('should handle service errors gracefully', async () => {
       const year = 2023;
       const errorMessage = 'Internal Server Error';
-      jest
-        .spyOn(racesService, 'getSeasonRaces')
-        .mockRejectedValue(new Error(errorMessage));
+      (racesService.getSeasonRaces as jest.Mock).mockRejectedValue(
+        new Error(errorMessage),
+      );
 
       await request(app.getHttpServer())
         .get(`/season/${year}/races`)
