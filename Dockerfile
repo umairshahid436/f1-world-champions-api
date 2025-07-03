@@ -33,20 +33,10 @@ RUN npm run build
 FROM base AS production
 WORKDIR /app
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001 -G nodejs
-
 # Reuse production dependencies from deps-prod stage
-COPY --from=deps-prod --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=deps-prod --chown=nestjs:nodejs /app/package*.json ./
-COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
-
-#  Create required directories with proper permissions
-RUN mkdir -p /app/logs && chown nestjs:nodejs /app/logs
-
-#  Switch to non-root user
-USER nestjs
+COPY --from=deps-prod /app/node_modules ./node_modules
+COPY --from=deps-prod /app/package*.json ./
+COPY --from=build /app/dist ./dist
 
 EXPOSE $PORT
 
@@ -54,5 +44,4 @@ EXPOSE $PORT
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/health || exit 1
 
-# Use exec form for proper signal handling  
 CMD ["node", "dist/main.js"] 
